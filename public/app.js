@@ -18,7 +18,7 @@ function setSource(next, load = true) {
   $('address').readOnly = source !== 'live'; $('address').value = source === 'sample' ? '0x1111111111111111111111111111111111111111' : source === 'recorded' ? '0x388c818ca8b9251b393131c08a736a67ccb19297' : '';
   $('sample-tag').classList.toggle('hidden', source !== 'sample'); $('live-consent').classList.toggle('hidden', source !== 'live'); $('live-check').checked = false;
   $('query-note').textContent = source === 'sample' ? 'Invented transactions for trying the tool. No external requests are made.'
-    : source === 'recorded' ? 'Saved mainnet history of a Lido protocol contract. Loaded from disk; no external requests.' : config.live ? 'Fetches the latest 100 normal transactions from Etherscan, which receives the queried address. The model comparison is a separate opt-in.' : config.publicDemo ? 'Fresh address queries are unavailable in this public demo. Use the sample or recorded Ethereum data.' : 'Live queries need ETHERSCAN_API_KEY in .env. The sample and recorded data work without keys.';
+    : source === 'recorded' ? 'Saved mainnet history of a Lido protocol contract. Loaded from disk; no external requests.' : config.live && config.publicDemo ? 'Sends the address to this site and to Etherscan, which returns the latest 100 normal transactions and 100 token transfers. The result stays in server memory for up to 5 minutes and is not saved. Lookups are rate-limited.' : config.live ? 'Fetches the latest 100 normal transactions and 100 token transfers from Etherscan, which receives the queried address. The model comparison is a separate opt-in.' : config.publicDemo ? 'Fresh address queries are unavailable in this public demo. Use the sample or recorded Ethereum data.' : 'Live queries need ETHERSCAN_API_KEY in .env. The sample and recorded data work without keys.';
   for (const id of ['sample-mode', 'recorded-mode', 'live-mode']) $(id).setAttribute('aria-pressed', $(id).classList.contains('selected'));
   if (source === 'live') $('address').focus(); else if (load) analyze();
 }
@@ -152,7 +152,9 @@ function preparePresend() {
 async function checkPresend() {
   $('presend-error').classList.add('hidden'); $('presend-run').disabled = true;
   try {
-    const result = await api('/api/presend', { source: report.source, days: report.days, reportId: report.id, to: $('presend-to').value.trim(),
+    const own = report.source === 'live' ? { address: report.address, start: report.start, end: report.end,
+      transactions: report.transactions.map(({ id, from, to, wei, timestamp, asset, decimals }) => ({ id, from, to, wei, timestamp, asset, decimals })) } : {};
+    const result = await api('/api/presend', { ...own, source: report.source, days: report.days, reportId: report.id, to: $('presend-to').value.trim(),
       amount: $('presend-amount').value.trim(), asset: $('presend-asset').value, when: `${$('presend-when').value}:00Z` });
     const changed = result.rows.filter(r => r.status !== 'kept');
     $('presend-result').innerHTML = changed.length ? `<p class="scenario-summary">This transfer would change ${plural(changed.length, 'finding')}.</p><ul class="diff-list">${scenarioRows(result.rows, false)}</ul>`
@@ -165,7 +167,7 @@ async function analyze() {
   busy = true; error(''); $('results').classList.add('hidden'); $('loading').classList.remove('hidden'); $('analyze').disabled = true; $('report').setAttribute('aria-busy', 'true'); for (const id of ['sample-mode', 'recorded-mode', 'live-mode']) $(id).disabled = true;
   try { report = await api('/api/report', { source, address: $('address').value.trim(), days: Number($('days').value), consent: $('live-check').checked }); aiResult = null; renderReport(); }
   catch (e) { error(e.message); }
-  finally { busy = false; $('loading').classList.add('hidden'); $('analyze').disabled = false; $('report').setAttribute('aria-busy', 'false'); for (const id of ['sample-mode', 'recorded-mode', 'live-mode']) $(id).disabled = id === 'live-mode' && Boolean(config.publicDemo); }
+  finally { busy = false; $('loading').classList.add('hidden'); $('analyze').disabled = false; $('report').setAttribute('aria-busy', 'false'); for (const id of ['sample-mode', 'recorded-mode', 'live-mode']) $(id).disabled = id === 'live-mode' && !config.live && Boolean(config.publicDemo); }
 }
 $('wallet-form').addEventListener('submit', e => { e.preventDefault(); analyze(); });
 $('presend-form').addEventListener('submit', e => { e.preventDefault(); checkPresend(); });
@@ -194,8 +196,10 @@ $('ai-run').addEventListener('click', async () => {
 });
 try { config = await api('/api/config');
   if (config.publicDemo) {
-    $('live-mode').disabled = true;
-    $('data-handling').textContent = 'Sample and recorded data only. No wallet connection or paid API requests. Hosting request logs are managed by Vercel.';
+    $('live-mode').disabled = !config.live;
+    $('data-handling').textContent = config.live
+      ? 'Address lookups go to Etherscan and are not saved by this site. No wallet connection or model requests. Page views are counted with Vercel Web Analytics, which never sees looked-up addresses. Hosting request logs are managed by Vercel.'
+      : 'Sample and recorded data only. No wallet connection or paid API requests. Page views are counted with Vercel Web Analytics. Hosting request logs are managed by Vercel.';
     $('ai-desc').textContent = 'This public demo replays saved model runs and makes no model requests. Run the project locally with your own API key for live comparisons.';
   }
   $('ai-model').textContent = `(${config.modelName || config.model})`;

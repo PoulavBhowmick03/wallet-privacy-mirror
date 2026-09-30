@@ -10,10 +10,11 @@ An Ethereum address does not establish a person's identity. Regular payments do 
 
 ## Try the report
 
-The public site offers two data sources:
+The public site offers three data sources:
 
 - **Sample:** invented transfers for exploring the interface.
 - **Recorded (Lido):** 100 real ETH receipts to the Lido Execution Layer Rewards Vault.
+- **Address:** a fresh lookup of an address you own or have permission to inspect.
 
 Select a finding, address, or activity bar to inspect its transactions. Real transactions link to Etherscan. You can filter the evidence and export the report as JSON.
 
@@ -21,7 +22,9 @@ Select a finding, address, or activity bar to inspect its transactions. Real tra
 - **Before you send:** adds one planned transfer and shows which findings it would create or strengthen.
 - **Model comparison:** replays a saved GPT-6.1 Sol run for the sample and recorded data.
 
-The public site disables fresh address queries and live model requests. Visitors cannot spend the owner's Etherscan or OpenAI API balance.
+The public site never makes model requests, so visitors cannot spend the owner's OpenAI balance.
+Address lookups use the owner's Etherscan key. They are rate-limited per connection and cached for five minutes.
+Etherscan receives each looked-up address. The site returns the report and does not save it.
 
 ## Run locally
 
@@ -147,7 +150,12 @@ The local server listens on `127.0.0.1`. It holds at most 50 reports in memory f
 There is no database, wallet connection, transaction signing, or application analytics.
 Vercel manages hosting request logs for the public deployment.
 
-Vercel deployments always disable fresh queries and model requests. Provider keys in the deployment environment cannot enable these requests.
+Vercel deployments never make model requests, even with an OpenAI key in the environment.
+Address lookups are off unless the deployment sets both `ETHERSCAN_API_KEY` and `PUBLIC_LIVE=1`.
+Each lookup makes two Etherscan requests. A connection can make 12 lookups in 10 minutes, and each server instance allows 40 per minute.
+These limits live in server memory, so separate serverless instances count separately.
+
+The public site counts page views with [Vercel Web Analytics](https://vercel.com/docs/analytics). Addresses travel in request bodies, never in URLs, so analytics does not receive them.
 Do not upload local keys. The `.vercelignore` file excludes local environment files and generated recordings.
 
 The implementation uses [Vercel Node.js Functions](https://vercel.com/docs/functions/configuring-functions/runtime) for reports and serves the interface as static files.

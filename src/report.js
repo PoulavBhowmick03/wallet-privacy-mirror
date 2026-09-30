@@ -8,10 +8,10 @@ const readJson = path => readFile(new URL(`../data/${path}`, import.meta.url), '
 
 // Builds a report for sample, recorded, or live data. Sample and recorded reports are
 // deterministic, so endpoints can rebuild them without server-side state.
-export async function buildReport(input, { publicDemo = false, etherscanKey } = {}) {
+export async function buildReport(input, { publicDemo = false, allowLive = !publicDemo, etherscanKey } = {}) {
   const sample = input.source === 'sample', recorded = input.source === 'recorded';
   if (!sample && !recorded && input.source !== 'live') throw new Error('Choose sample, recorded, or live data.');
-  if (publicDemo && !sample && !recorded) { const e = new Error('Fresh address queries are unavailable in this public demo. Use the sample or recorded Ethereum data.'); e.status = 403; throw e; }
+  if (!allowLive && publicDemo && !sample && !recorded) { const e = new Error('Fresh address queries are unavailable in this public demo. Use the sample or recorded Ethereum data.'); e.status = 403; throw e; }
   if (!sample && !recorded && (!ADDRESS.test(input.address || '') || input.consent !== true)) throw new Error('Enter a valid address and confirm permission to query it.');
   if (!sample && !recorded && !etherscanKey) throw new Error('Live data needs ETHERSCAN_API_KEY in the server .env file. The sample needs no key.');
   const snapshot = recorded ? await readJson('lido-mainnet-snapshot.json') : null;
