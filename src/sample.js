@@ -17,5 +17,10 @@ export function sampleTransactions() {
   add('09-23', '19', peers[3], '0.017');
   add('09-24', '15', peers[4], '0.06', 'in');
   add('09-25', '10', peers[5], '0.013');
+  // A synthetic stablecoin series: 1,500 USDC to one address on the fifth of each month.
+  const landlord = `0x${'8'.repeat(40)}`;
+  ['07-05', '08-05', '09-05'].forEach(d => rows.push({ id: `sample-${String(rows.length + 1).padStart(3, '0')}`, from: SAMPLE_ADDRESS, to: landlord,
+    wei: '1500000000', asset: 'USDC', decimals: 6, token: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    timestamp: Date.parse(`2026-${d}T08:00:00Z`) / 1000, failed: false, synthetic: true }));
   return rows.sort((a, b) => a.timestamp - b.timestamp);
 }

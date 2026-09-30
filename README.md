@@ -2,7 +2,7 @@
 
 [Open the demo](https://wallet-privacy-mirror.vercel.app)
 
-Inspect public ETH transfers for an Ethereum address. Each finding includes the transactions behind it.
+Inspect public ETH and stablecoin transfers for an Ethereum address. Each finding includes the transactions behind it.
 
 The report shows repeated addresses, transfer amounts, and activity over time. It separates observed facts from possible explanations and unknown information.
 
@@ -17,7 +17,11 @@ The public site offers two data sources:
 
 Select a finding, address, or activity bar to inspect its transactions. Real transactions link to Etherscan. You can filter the evidence and export the report as JSON.
 
-The public site disables fresh address queries and model comparison. Visitors cannot spend the owner's Etherscan or OpenAI API balance.
+- **What if:** re-runs the rules after one countermeasure and shows which findings disappear, change, or stay.
+- **Before you send:** adds one planned transfer and shows which findings it would create or strengthen.
+- **Model comparison:** replays a saved GPT-6.1 Sol run for the sample and recorded data.
+
+The public site disables fresh address queries and live model requests. Visitors cannot spend the owner's Etherscan or OpenAI API balance.
 
 ## Run locally
 
@@ -60,7 +64,8 @@ The sample and recorded modes make no external requests.
 
 ## What the report measures
 
-Only successful, positive-value ETH transfers are included. Token transfers, internal calls, fees, self-transfers, and other chains are excluded.
+Only successful, positive-value ETH transfers and USDC, USDT, and DAI transfers are included. Other tokens, internal calls, fees, self-transfers, and other chains are excluded.
+The token contract address decides the asset. Token names and symbols are ignored because anyone can deploy a token named USDC.
 
 | Finding | Rule |
 | --- | --- |
@@ -71,8 +76,27 @@ Only successful, positive-value ETH transfers are included. Token transfers, int
 
 Recurring intervals average at least five days. Each interval stays within 20% of the mean.
 The amount spread stays within 5% of the smallest amount. These thresholds are demonstration rules, not a tested classifier.
+Transfers are grouped by counterparty, direction, asset, and similar amount before the interval test. A fixed monthly series is found even when the same address also sends other amounts.
 
-Amounts are calculated with integer wei. Evidence rows retain exact ETH values. Summary amounts round to four decimal places.
+Amounts are calculated with integer base units. Evidence rows retain exact amounts. Summary amounts round to four decimal places.
+
+Each report lists what it covered and what it cannot see: other tokens and NFTs, internal calls, L2s, your other addresses, and wallet or RPC metadata.
+
+## What if and planned transfers
+
+**What if** applies one change to the analyzed transfers, runs the same rules again, and compares the findings.
+
+| Scenario | Change |
+| --- | --- |
+| Stealth addresses | Incoming transfers go to one-time addresses (ERC-5564) and disappear from this address |
+| Privacy pool | Incoming transfers come from a shielded pool, so the payer is hidden |
+| Second account | Transfers to any address paid three or more times move to another account |
+| Random timing | Each transfer is delayed by 0 to 3 days and sent at a random hour, with a fixed seed |
+
+Each scenario shows only what it removes from this report. It does not model the new patterns a countermeasure creates, so each result names that risk.
+In the sample, a privacy pool hides who paid, but three 1.2 ETH receipts 31 days apart remain visible.
+
+**Before you send** adds one planned outgoing transfer and compares the findings. Both features work on the public site because they make no external requests.
 
 ## Recorded Ethereum data
 
@@ -106,7 +130,16 @@ The model selects existing candidates or proposes amount and timing patterns. Co
 Displayed claims use fixed text. Rejected proposals remain visible for inspection.
 
 The request uses `store: false`. This does not guarantee zero provider retention.
-The interface reports returned token usage and an estimated cost. This project has no successful live model comparison.
+The interface reports returned token usage and an estimated cost.
+
+The public site replays saved runs from `data/model-runs.json`. A saved run is shown only for the exact transactions it was recorded on.
+To record new runs locally:
+
+```sh
+npm run record:model
+```
+
+Measured results are in [LIVE_RESULTS.md](LIVE_RESULTS.md).
 
 ## Data handling
 
@@ -129,7 +162,7 @@ npm run test:e2e
 Browser tests require Google Chrome. Playwright starts the local server.
 Provider tests use mock responses and make no paid requests.
 
-To prepare the six-case model evaluation without API calls:
+To prepare the model evaluation without API calls:
 
 ```sh
 npm run evaluate
@@ -138,18 +171,22 @@ npm run evaluate
 To run the paid evaluation locally:
 
 ```sh
-npm run evaluate -- --with-ai
+npm run evaluate -- --with-ai --runs 3
 ```
 
-This command makes up to six paid requests. Results are saved in `artifacts/`, which Git excludes.
+The evaluation has 11 cases: 6 pattern cases and 5 near-miss cases. A near-miss case almost satisfies a rule, so accepting it would be a false finding.
+With `--runs 3`, this command makes 33 paid requests. Results are saved in `artifacts/`, which Git excludes. The published run is in `data/model-evaluation.json`.
 
 ## Code
 
 | File | Purpose |
 | --- | --- |
-| `src/analysis.js` | ETH totals, pattern rules, and evidence |
+| `src/analysis.js` | Totals, pattern rules, coverage, and evidence |
+| `src/scenarios.js` | What-if scenarios and planned transfers |
+| `src/report.js` | Report building and saved model runs |
 | `src/verification.js` | Checks for model proposals |
 | `src/providers.js` | Etherscan and OpenAI requests |
+| `scripts/record-model-runs.js` | Saves model runs for the public site |
 | `server.js` | HTTP handler and local server |
 | `api/[action].js` | Vercel function entry point |
 | `public/app.js` | Report interface and evidence controls |

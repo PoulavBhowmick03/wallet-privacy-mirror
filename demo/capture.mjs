@@ -45,6 +45,10 @@ const reportBoxes = {
   f1: '#findings .finding:nth-child(1)', f2: '#findings .finding:nth-child(2)', f3: '#findings .finding:nth-child(3)',
   viewRepeat: '[data-finding=repeat]', map: '#map-section', graph: '#graph svg', node0: '[data-peer="0"]', node1: '[data-peer="1"]', node2: '[data-peer="2"]',
   activity: '#activity-section', timeline: '#timeline svg', ai: '#ai-section', aiOpen: '#ai-open', limits: '#boundaries',
+  coverage: '#coverage', whatif: '#whatif-section', scnStealth: '[data-scenario=stealth]', scnPool: '[data-scenario=pool]',
+  whatifRemoved: '#scenario-result .diff.removed', whatifChanged: '#scenario-result .diff.changed', whatifSummary: '#scenario-result .scenario-summary', whatifList: '#scenario-result .diff-list',
+  presend: '#presend-section', presendForm: '#presend-form', presendRun: '#presend-run', presendResult: '#presend-result', presendLast: '#presend-result .diff:last-child',
+  aiRecorded: '#ai-recorded', aiResult: '#ai-result', metrics: '#ai-result .comparison-metrics', evalLine: '#eval-line', aiNotice: '#ai-result .notice', aiCards: '#ai-result .ai-finding',
 };
 
 // 1. Sample report and its hypotheses tab.
@@ -63,6 +67,16 @@ await page.locator('[data-finding="cadence-3"]').click();
 await page.locator('#evidence-dialog').waitFor();
 await viewport('evidence', { dialog: '#evidence-dialog', title: '#evidence-title', method: '#evidence-method', table: '.evidence-scroll', row1: '#evidence-rows tr:nth-child(1)', rows: '#evidence-rows', note: '#evidence-note', count: '#evidence-count', search: '#evidence-search', close: '#evidence-close' });
 await page.keyboard.press('Escape');
+
+// 2b. Countermeasures, a planned transfer, and the recorded model run, in the order the video shows them.
+await load();
+await page.locator('[data-scenario=pool]').click();
+await full('whatif-pool', reportBoxes);
+await page.locator('#presend-run').click(); await page.locator('#presend-result .diff-list').waitFor();
+await full('presend', reportBoxes);
+await page.locator('#ai-recorded').click(); await page.locator('#ai-result .comparison-metrics').waitFor();
+await full('model', reportBoxes);
+await load();
 
 // 3. Counterparty hover.
 await page.evaluate(() => scrollTo(0, 0));

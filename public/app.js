@@ -3,8 +3,10 @@ const $ = id => document.getElementById(id);
 const esc = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const short = a => `${a.slice(0, 6)}...${a.slice(-4)}`;
 const date = seconds => new Date(seconds * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
-const eth = wei => { const n = BigInt(wei); return `${n / 10n ** 18n}${n % 10n ** 18n ? `.${(n % 10n ** 18n).toString().padStart(18, '0').replace(/0+$/, '')}` : ''}`; };
-let report, aiResult, config = {}, source = 'sample', filter = 'observed', busy = false, evidenceIds = [], toastTimer;
+const units = (value, decimals = 18) => { const n = BigInt(value), scale = 10n ** BigInt(decimals), fraction = (n % scale).toString().padStart(decimals, '0').replace(/0+$/, ''); return `${n / scale}${fraction ? `.${fraction}` : ''}`; };
+const amount = t => `${units(t.wei, t.decimals ?? 18)} ${t.asset || 'ETH'}`;
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+let report, aiResult, config = {}, source = 'sample', filter = 'observed', busy = false, evidenceIds = [], toastTimer, scenario = 'stealth';
 async function api(path, data) {
   const response = await fetch(path, data === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
   const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Request failed.'); return result;
@@ -36,7 +38,7 @@ function renderEvidence() {
   const all = report.transactions.filter(t => evidenceIds.includes(t.id));
   const rows = all.filter(t => `${t.id} ${t.from} ${t.to} ${date(t.timestamp)} ${new Date(t.timestamp * 1000).toISOString()}`.toLowerCase().includes(query))
     .sort((a, b) => $('evidence-sort').value === 'newest' ? b.timestamp - a.timestamp : a.timestamp - b.timestamp);
-  $('evidence-rows').innerHTML = rows.map(t => `<tr><td>${t.synthetic ? esc(t.id) : `<a href="https://etherscan.io/tx/${esc(t.id)}" target="_blank" rel="noopener noreferrer">${esc(short(t.id))}</a>`}</td><td>${date(t.timestamp)} ${new Date(t.timestamp * 1000).toISOString().slice(11, 16)}</td><td><span class="direction ${t.from.toLowerCase() === report.address ? 'out' : 'in'}">${t.from.toLowerCase() === report.address ? 'Sent' : 'Received'}</span></td><td>${counterparty(t)}</td><td>${esc(eth(t.wei))}</td></tr>`).join('');
+  $('evidence-rows').innerHTML = rows.map(t => `<tr><td>${t.synthetic ? esc(t.id) : `<a href="https://etherscan.io/tx/${esc(t.hash || t.id)}" target="_blank" rel="noopener noreferrer">${esc(short(t.hash || t.id))}</a>`}</td><td>${date(t.timestamp)} ${new Date(t.timestamp * 1000).toISOString().slice(11, 16)}</td><td><span class="direction ${t.from.toLowerCase() === report.address ? 'out' : 'in'}">${t.from.toLowerCase() === report.address ? 'Sent' : 'Received'}</span></td><td>${counterparty(t)}</td><td>${esc(amount(t))}</td></tr>`).join('');
   $('evidence-count').textContent = `${rows.length} of ${all.length} transfers`;
   $('evidence-empty').classList.toggle('hidden', rows.length > 0);
 }
@@ -56,7 +58,7 @@ function renderOverview() {
   $('overview-evidence').onclick = () => showEvidence('Most frequent counterparty', overview.top.evidence, 'All analyzed transfers involving the most frequent counterparty. A connection between addresses does not establish a relationship between people.');
   $('timeline-range').textContent = overview.first == null ? 'No analyzed transfers' : `${date(overview.first)} - ${date(overview.last)} (${overview.observedDays} calendar-day span of fetched records)`;
   const buckets = timelineBuckets(report);
-  if (!buckets.length) { $('timeline').innerHTML = '<div class="empty">No positive-value ETH transfers to plot. Tokens and internal calls remain outside this report.</div>'; return; }
+  if (!buckets.length) { $('timeline').innerHTML = '<div class="empty">No positive-value transfers to plot. Other tokens and internal calls remain outside this report.</div>'; return; }
   const peak = Math.max(...buckets.map(b => b.evidence.length)), width = 840, left = 28, chartWidth = 780, floor = 130, barWidth = Math.min(32, chartWidth / buckets.length - 10);
   const bars = buckets.map((b, i) => {
     const center = left + (i + .5) * chartWidth / buckets.length, incomingHeight = b.incoming / peak * 90, outgoingHeight = b.outgoing / peak * 90;
@@ -78,7 +80,7 @@ function renderGraph() {
   $('graph-count').textContent = `${report.peers.length} address${report.peers.length === 1 ? '' : 'es'}`;
   $('graph-detail').textContent = peers.length ? 'Select an address to list its transfers.' : 'No positive-value ETH connections in this window.';
   document.querySelectorAll('[data-peer]').forEach(node => {
-    const inspect = () => { const p = nodes[Number(node.dataset.peer)]; $('graph-detail').textContent = `${short(p.address)} | ${p.incoming} ETH in / ${p.outgoing} ETH out`; showEvidence(`Transfers with ${short(p.address)}`, p.evidence, 'Every successful, positive-value ETH transfer between these two addresses in the analyzed window.'); };
+    const inspect = () => { const p = nodes[Number(node.dataset.peer)]; $('graph-detail').textContent = `${short(p.address)} | ${p.incoming} ETH in / ${p.outgoing} ETH out${p.tokenTransfers ? ` | ${plural(p.tokenTransfers, 'stablecoin transfer')}` : ''}`; showEvidence(`Transfers with ${short(p.address)}`, p.evidence, 'Every successful, positive-value ETH and stablecoin transfer between these two addresses in the analyzed window.'); };
     node.addEventListener('click', inspect); node.addEventListener('keydown', event => { if (['Enter', ' '].includes(event.key)) { event.preventDefault(); inspect(); } });
   });
 }
@@ -92,12 +94,71 @@ function renderReport() {
     $('provenance').innerHTML = `This is a saved snapshot of the Lido Execution Layer Rewards Vault, a public protocol contract (<a href="https://docs.lido.fi/deployed-contracts/" target="_blank" rel="noopener noreferrer">address source</a>). It is not a fresh query or a person's wallet. Fetched ${esc(report.recordedAt)} in ${report.originalFetchMs} ms; ${checks.filter(r => r.passed).length} of ${checks.length} transactions matched an independent mainnet RPC.`;
   }
   $('cap-warning').classList.toggle('hidden', !report.capReached); $('cap-warning').textContent = 'The 100-transaction cap was reached. Earlier activity in this period may be missing. Findings describe the fetched sample only.';
-  $('stats').innerHTML = [['Transfers', report.stats.transfers, '', 'Successful, positive value'], ['Counterparties', report.stats.counterparties, '', 'Distinct addresses'], ['Received', report.stats.incoming, 'ETH', 'Excludes fees'], ['Sent', report.stats.outgoing, 'ETH', 'Excludes fees']].map(([label, value, unit, note]) => `<div class="stat"><div class="stat-label">${label}</div><div class="stat-value">${esc(Number(value).toLocaleString('en-US', { maximumFractionDigits: 4 }))}<small>${unit}</small></div><div class="stat-note">${note}</div></div>`).join('');
+  const coins = Object.entries(report.stats.tokens || {});
+  const coinNote = report.coverage.stablecoins.fetched == null ? 'Not fetched for this snapshot' : coins.length ? coins.map(([k, v]) => `${k} ${Number(v.outgoing).toLocaleString('en-US')} out, ${Number(v.incoming).toLocaleString('en-US')} in`).join(' | ') : 'USDC, USDT, DAI';
+  $('stats').innerHTML = [['Transfers', report.stats.transfers, '', 'Successful, positive value'], ['Counterparties', report.stats.counterparties, '', 'Distinct addresses'], ['Received', report.stats.incoming, 'ETH', 'Excludes fees'], ['Sent', report.stats.outgoing, 'ETH', 'Excludes fees'], ['Stablecoin transfers', report.stats.tokenTransfers, '', coinNote]].map(([label, value, unit, note]) => `<div class="stat"><div class="stat-label">${label}</div><div class="stat-value">${esc(Number(value).toLocaleString('en-US', { maximumFractionDigits: 4 }))}<small>${unit}</small></div><div class="stat-note">${note}</div></div>`).join('');
   for (const status of ['observed', 'hypothesis', 'unknown']) $(`${status}-count`).textContent = report.findings.filter(f => f.status === status).length;
-  filter = 'observed'; renderFindings(); renderGraph(); renderOverview();
-  $('ai-result').classList.add('hidden'); $('ai-open').disabled = Boolean(config.publicDemo);
-  $('ai-open').textContent = config.publicDemo ? 'Unavailable in public demo' : config.ai ? 'Compare with model' : 'Set up model comparison';
-  $('method-content').innerHTML = `<p>${report.source === 'sample' ? 'Synthetic fixture: dates and transfers are invented, not claims about a real wallet.' : 'Source: Etherscan V2 account txlist on chain 1, latest 100 records, descending. Dates are filtered after fetching; earlier activity may be missing.'}</p>${report.limitations.map(l => `<p>${esc(l)}</p>`).join('')}<p>Amounts are calculated as integer wei. Displayed metrics round to four decimals; evidence rows retain exact amounts. Analysis is read-only. No wallet connection, signing, analytics, or database is used. Reports remain in server memory for up to 15 minutes (maximum 50 reports).</p><p>AI is a separate opt-in: addresses, transaction IDs, amounts, timestamps, and candidates are sent to OpenAI. The request uses store:false; this is not a guarantee of zero provider retention. The model selects existing hypotheses or proposes typed patterns with evidence IDs. Code checks amounts, timing, and direction. Displayed claims use fixed wording.</p><p>Additional findings must pass evidence checks. Additional means absent from the baseline, not beyond what rules could find. Cost is an estimate range derived from returned token usage, not an invoice. The range accounts for standard input vs. cache-write pricing.</p><p>API references: <a href="https://docs.etherscan.io/api-reference/endpoint/txlist" target="_blank" rel="noopener noreferrer">Etherscan normal transactions</a> | <a href="https://developers.openai.com/api/docs/models/gpt-6.1-sol" target="_blank" rel="noopener noreferrer">GPT-6.1 Sol</a> | <a href="https://developers.openai.com/api/docs/guides/structured-outputs" target="_blank" rel="noopener noreferrer">Structured outputs</a>.</p>`;
+  renderCoverage();
+  filter = 'observed'; renderFindings(); renderGraph(); renderOverview(); renderScenario(); preparePresend();
+  $('ai-result').classList.add('hidden'); $('ai-open').classList.toggle('hidden', Boolean(config.publicDemo));
+  $('ai-open').textContent = config.ai ? 'Run live comparison' : 'Set up model comparison';
+  $('ai-recorded').classList.toggle('hidden', !(report.source === 'recorded' || (report.source === 'sample' && report.days === 90)));
+  $('method-content').innerHTML = `<p>${report.source === 'sample' ? 'Synthetic fixture: dates and transfers are invented, not claims about a real wallet.' : report.source === 'recorded' ? 'Source: a saved Etherscan V2 txlist snapshot on chain 1. Token transfers were not fetched for this snapshot.' : 'Source: Etherscan V2 txlist and tokentx on chain 1, latest 100 records each, descending. Token transfers count only for the USDC, USDT, and DAI contract addresses. Dates are filtered after fetching; earlier activity may be missing.'}</p>${report.limitations.map(l => `<p>${esc(l)}</p>`).join('')}<p>Amounts are calculated as integer wei. Displayed metrics round to four decimals; evidence rows retain exact amounts. Analysis is read-only. No wallet connection, signing, analytics, or database is used. Reports remain in server memory for up to 15 minutes (maximum 50 reports).</p><p>AI is a separate opt-in: addresses, transaction IDs, amounts, timestamps, and candidates are sent to OpenAI. The request uses store:false; this is not a guarantee of zero provider retention. The model selects existing hypotheses or proposes typed patterns with evidence IDs. Code checks amounts, timing, and direction. Displayed claims use fixed wording.</p><p>Additional findings must pass evidence checks. Additional means absent from the baseline, not beyond what rules could find. Cost is an estimate range derived from returned token usage, not an invoice. The range accounts for standard input vs. cache-write pricing.</p><p>API references: <a href="https://docs.etherscan.io/api-reference/endpoint/txlist" target="_blank" rel="noopener noreferrer">Etherscan normal transactions</a> | <a href="https://developers.openai.com/api/docs/models/gpt-6.1-sol" target="_blank" rel="noopener noreferrer">GPT-6.1 Sol</a> | <a href="https://developers.openai.com/api/docs/guides/structured-outputs" target="_blank" rel="noopener noreferrer">Structured outputs</a>.</p>`;
+}
+function renderAIResult(result) {
+  const cost = result.cost ? `$${result.cost.lower.toFixed(5)}-$${result.cost.upper.toFixed(5)} estimated` : 'Cost unavailable for this model';
+  const accepted = result.accepted || [], rejected = result.rejected || [];
+  const metrics = `<div class="comparison-metrics"><div><strong>${result.proposed || 0}</strong><span>Model proposals</span></div><div><strong>${accepted.length}</strong><span>Passed checks</span></div><div><strong>${rejected.length}</strong><span>Rejected proposals</span></div></div>`;
+  const cards = accepted.map(f => `<article class="finding ai-finding"><span class="status"><i></i>Model proposal, passed checks</span><h4>${esc(f.title)}</h4><p>${esc(f.body)}</p><button class="evidence-button" data-ai-evidence="${esc(f.id)}">View ${f.evidence.length} transfers</button></article>`).join('');
+  $('ai-result').innerHTML = `${result.recorded ? `<p class="notice info">Recorded run from ${esc(date(Date.parse(result.recordedAt) / 1000))}. This is a saved API response for this exact data, not a new request.</p>` : ''}<p><strong>${esc(result.model)}</strong> | ${(result.elapsedMs / 1000).toFixed(2)} s | ${esc(cost)}</p>${metrics}<p>Baseline: ${report.interpretations.length} recurring-transfer hypotheses. AI selected: ${result.selections.length}.</p>${result.selections.length ? `<ul>${result.selections.map(s => `<li>${esc(s.title)} <button class="evidence-button" data-ai-selection="${esc(s.id)}">View evidence</button></li>`).join('')}</ul>` : '<p>The model selected no baseline hypotheses.</p>'}${cards || '<p>No additional patterns survived the checks.</p>'}${rejected.length ? `<details class="rejected-proposals"><summary>Show ${rejected.length} rejected proposal${rejected.length === 1 ? '' : 's'}</summary>${rejected.map(r => `<p><strong>${esc(r.id)} | ${esc(r.category)}</strong><br>${esc(r.reason)}${r.evidence.length ? `<br><button class="evidence-button" data-ai-rejected="${esc(r.id)}">View cited transfers</button>` : ''}</p>`).join('')}</details>` : ''}<p>${esc(result.note)}</p>${result.usage ? `<p>Input: ${result.usage.input_tokens} tokens | Cached: ${result.usage.input_tokens_details?.cached_tokens || 0} | Output: ${result.usage.output_tokens}</p>` : ''}${result.cost ? `<p>${esc(result.cost.note)}</p>` : ''}`;
+  $('ai-result').classList.remove('hidden');
+  document.querySelectorAll('[data-ai-evidence]').forEach(b => b.addEventListener('click', () => { const f = accepted.find(f => f.id === b.dataset.aiEvidence); showEvidence(f.title, f.evidence, `${f.method} ${f.verification}`); }));
+  document.querySelectorAll('[data-ai-selection]').forEach(b => b.addEventListener('click', () => { const s = result.selections.find(s => s.id === b.dataset.aiSelection); showEvidence(s.title, s.evidence, 'AI selected this existing rule-backed hypothesis. Its evidence is the same as the baseline. Payment purpose remains unverified.'); }));
+  document.querySelectorAll('[data-ai-rejected]').forEach(b => b.addEventListener('click', () => { const r = rejected.find(r => r.id === b.dataset.aiRejected); showEvidence(`Rejected ${r.id}`, r.evidence, `${r.reason} Only cited records present in this report are shown. This proposal is not an accepted finding.`); }));
+}
+function renderCoverage() {
+  const c = report.coverage, coins = c.stablecoins.assets.join(', ');
+  const tokenText = c.stablecoins.fetched == null ? `Stablecoin transfers were not fetched for this snapshot` : `${plural(c.stablecoins.analyzed, 'stablecoin transfer')} (${coins})`;
+  const capText = report.source === 'live' ? ` from the latest ${c.eth.fetched} normal transactions and ${c.stablecoins.fetched} token transfers (100 maximum each)` : '';
+  $('coverage').innerHTML = `<div><span class="coverage-label">Included</span>${plural(c.eth.analyzed, 'ETH transfer')}, ${esc(tokenText)}${capText}.</div><div><span class="coverage-label">Not visible here</span>Other tokens and NFTs, internal calls and smart-account activity, L2s and other chains, your other addresses, wallet and RPC metadata.</div>`;
+}
+function scenarioRows(rows, showKept) {
+  const label = { removed: 'Removed', changed: 'Changed', kept: 'Unchanged', added: 'New' };
+  return rows.filter(r => showKept || r.status !== 'kept').map(r => `<li class="diff ${r.status}"><span class="diff-tag">${label[r.status]}</span><div><strong>${esc(r.title)}</strong>${r.status === 'changed' || r.status === 'added' ? `<p>${esc(r.after)}</p>` : ''}</div></li>`).join('');
+}
+function renderScenario() {
+  $('scenario-tabs').innerHTML = report.whatIf.map(s => `<button type="button" role="tab" data-scenario="${s.id}" class="${s.id === scenario ? 'selected' : ''}" aria-selected="${s.id === scenario}">${esc(s.label)}</button>`).join('');
+  document.querySelectorAll('[data-scenario]').forEach(b => b.addEventListener('click', () => { scenario = b.dataset.scenario; renderScenario(); }));
+  const s = report.whatIf.find(s => s.id === scenario);
+  const parts = [s.removed && `removes ${plural(s.removed, 'finding')}`, s.changed && `changes ${plural(s.changed, 'finding')}`, s.added && `adds ${plural(s.added, 'finding')}`].filter(Boolean);
+  const summary = parts.length ? parts.join(', ').replace(/^./, c => c.toUpperCase()) : 'Changes no finding';
+  $('scenario-result').innerHTML = `<p class="scenario-summary">${summary}. ${s.kept} unchanged.</p><p class="muted">${esc(s.description)}</p><ul class="diff-list">${scenarioRows(s.rows, true)}</ul><p class="notice">${esc(s.caveat)}</p>`;
+}
+function preparePresend() {
+  $('presend-result').innerHTML = ''; $('presend-error').classList.add('hidden');
+  const series = report.findings.find(f => f.status === 'hypothesis' && f.key.startsWith('recurring:outgoing'));
+  const rows = series ? report.transactions.filter(t => series.evidence.includes(t.id)) : [];
+  if (rows.length) {
+    const last = rows.at(-1), next = last.timestamp + Math.round((last.timestamp - rows[0].timestamp) / (rows.length - 1));
+    $('presend-to').value = last.to; $('presend-amount').value = units(last.wei, last.decimals ?? 18); $('presend-asset').value = last.asset || 'ETH';
+    $('presend-when').value = new Date(next * 1000).toISOString().slice(0, 16);
+    $('presend-hint').textContent = 'Prefilled with the next transfer in a regular series from this report. Edit any field.';
+  } else {
+    $('presend-to').value = ''; $('presend-amount').value = ''; $('presend-asset').value = 'ETH';
+    $('presend-when').value = new Date(report.end * 1000).toISOString().slice(0, 16);
+    $('presend-hint').textContent = 'This report has no outgoing series to prefill. Enter a planned transfer.';
+  }
+}
+async function checkPresend() {
+  $('presend-error').classList.add('hidden'); $('presend-run').disabled = true;
+  try {
+    const result = await api('/api/presend', { source: report.source, days: report.days, reportId: report.id, to: $('presend-to').value.trim(),
+      amount: $('presend-amount').value.trim(), asset: $('presend-asset').value, when: `${$('presend-when').value}:00Z` });
+    const changed = result.rows.filter(r => r.status !== 'kept');
+    $('presend-result').innerHTML = changed.length ? `<p class="scenario-summary">This transfer would change ${plural(changed.length, 'finding')}.</p><ul class="diff-list">${scenarioRows(result.rows, false)}</ul>`
+      : '<p class="scenario-summary">No finding changes. This transfer adds nothing to a visible pattern in this window.</p>';
+  } catch (e) { $('presend-error').textContent = e.message; $('presend-error').classList.remove('hidden'); }
+  finally { $('presend-run').disabled = false; }
 }
 async function analyze() {
   if (busy) return;
@@ -107,6 +168,13 @@ async function analyze() {
   finally { busy = false; $('loading').classList.add('hidden'); $('analyze').disabled = false; $('report').setAttribute('aria-busy', 'false'); for (const id of ['sample-mode', 'recorded-mode', 'live-mode']) $(id).disabled = id === 'live-mode' && Boolean(config.publicDemo); }
 }
 $('wallet-form').addEventListener('submit', e => { e.preventDefault(); analyze(); });
+$('presend-form').addEventListener('submit', e => { e.preventDefault(); checkPresend(); });
+$('ai-recorded').addEventListener('click', async () => {
+  $('ai-recorded').disabled = true;
+  try { const result = await api('/api/ai-recorded', { source: report.source, days: report.days }); aiResult = result; renderAIResult(result); }
+  catch (e) { $('ai-result').innerHTML = `<p class="error">${esc(e.message)}</p>`; $('ai-result').classList.remove('hidden'); }
+  finally { $('ai-recorded').disabled = false; }
+});
 $('sample-mode').addEventListener('click', () => setSource('sample')); $('live-mode').addEventListener('click', () => setSource('live')); $('recorded-mode').addEventListener('click', () => setSource('recorded'));
 document.querySelectorAll('[data-filter]').forEach(button => { button.addEventListener('click', () => { filter = button.dataset.filter; renderFindings(); }); button.addEventListener('keydown', event => { if (['ArrowLeft', 'ArrowRight'].includes(event.key)) { event.preventDefault(); const tabs = [...document.querySelectorAll('[data-filter]')], index = tabs.indexOf(button), next = tabs[(index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length]; next.click(); next.focus(); } }); });
 $('evidence-close').addEventListener('click', () => $('evidence-dialog').close()); $('ai-close').addEventListener('click', () => $('ai-dialog').close());
@@ -120,15 +188,7 @@ $('ai-run').addEventListener('click', async () => {
   try {
     const result = await api('/api/ai', { reportId: activeReport.id, consent: true });
     if (report.id !== activeReport.id) throw new Error('The report changed during comparison. Run the comparison for the current report.');
-    aiResult = result; const cost = result.cost ? `$${result.cost.lower.toFixed(5)}-$${result.cost.upper.toFixed(5)} estimated` : 'Cost unavailable for this model';
-    const accepted = result.accepted || [], rejected = result.rejected || [];
-    const metrics = `<div class="comparison-metrics"><div><strong>${result.proposed || 0}</strong><span>Model proposals</span></div><div><strong>${accepted.length}</strong><span>Passed checks</span></div><div><strong>${rejected.length}</strong><span>Rejected proposals</span></div></div>`;
-    const cards = accepted.map(f => `<article class="finding ai-finding"><span class="status"><i></i>Model proposal, passed checks</span><h4>${esc(f.title)}</h4><p>${esc(f.body)}</p><button class="evidence-button" data-ai-evidence="${esc(f.id)}">View ${f.evidence.length} transfers</button></article>`).join('');
-    $('ai-result').innerHTML = `<p><strong>${esc(result.model)}</strong> | ${(result.elapsedMs / 1000).toFixed(2)} s | ${esc(cost)}</p>${metrics}<p>Baseline: ${report.interpretations.length} recurring-transfer hypotheses. AI selected: ${result.selections.length}.</p>${result.selections.length ? `<ul>${result.selections.map(s => `<li>${esc(s.title)} <button class="evidence-button" data-ai-selection="${esc(s.id)}">View evidence</button></li>`).join('')}</ul>` : '<p>The model selected no baseline hypotheses.</p>'}${cards || '<p>No additional patterns survived the checks.</p>'}${rejected.length ? `<details class="rejected-proposals"><summary>Show ${rejected.length} rejected proposal${rejected.length === 1 ? '' : 's'}</summary>${rejected.map(r => `<p><strong>${esc(r.id)} | ${esc(r.category)}</strong><br>${esc(r.reason)}${r.evidence.length ? `<br><button class="evidence-button" data-ai-rejected="${esc(r.id)}">View cited transfers</button>` : ''}</p>`).join('')}</details>` : ''}<p>${esc(result.note)}</p>${result.usage ? `<p>Input: ${result.usage.input_tokens} tokens | Cached: ${result.usage.input_tokens_details?.cached_tokens || 0} | Output: ${result.usage.output_tokens}</p>` : ''}${result.cost ? `<p>${esc(result.cost.note)}</p>` : ''}`;
-    $('ai-result').classList.remove('hidden'); $('ai-dialog').close();
-    document.querySelectorAll('[data-ai-evidence]').forEach(b => b.addEventListener('click', () => { const f = accepted.find(f => f.id === b.dataset.aiEvidence); showEvidence(f.title, f.evidence, `${f.method} ${f.verification}`); }));
-    document.querySelectorAll('[data-ai-selection]').forEach(b => b.addEventListener('click', () => { const s = result.selections.find(s => s.id === b.dataset.aiSelection); showEvidence(s.title, s.evidence, 'AI selected this existing rule-backed hypothesis. Its evidence is the same as the baseline. Payment purpose remains unverified.'); }));
-    document.querySelectorAll('[data-ai-rejected]').forEach(b => b.addEventListener('click', () => { const r = rejected.find(r => r.id === b.dataset.aiRejected); showEvidence(`Rejected ${r.id}`, r.evidence, `${r.reason} Only cited records present in this report are shown. This proposal is not an accepted finding.`); }));
+    aiResult = result; renderAIResult(result); $('ai-dialog').close();
   } catch (e) { $('ai-error').textContent = e.message; $('ai-error').classList.remove('hidden'); }
   finally { $('ai-run').disabled = !config.ai; $('ai-run').textContent = 'Run comparison'; }
 });
@@ -136,8 +196,11 @@ try { config = await api('/api/config');
   if (config.publicDemo) {
     $('live-mode').disabled = true;
     $('data-handling').textContent = 'Sample and recorded data only. No wallet connection or paid API requests. Hosting request logs are managed by Vercel.';
-    document.querySelector('.ai-copy p').textContent = 'Model comparison is available when you run this project locally with your own API key. This public demo makes no paid API requests.';
+    $('ai-desc').textContent = 'This public demo replays saved model runs and makes no model requests. Run the project locally with your own API key for live comparisons.';
   }
+  $('ai-model').textContent = `(${config.modelName || config.model})`;
+  const ev = config.evaluation;
+  if (ev) $('eval-line').textContent = `Evaluation: ${ev.passed} of ${ev.completed} attempts passed across ${ev.cases} fixed cases, ${ev.nearMiss} of them near-miss traps. ${ev.proposed} proposals, ${ev.accepted} passed checks, ${ev.rejected} rejected. Estimated cost $${ev.cost.lower.toFixed(2)}-$${ev.cost.upper.toFixed(2)}.`;
   setSource('sample', false); await analyze(); } catch (e) { error(`Could not load the report: ${e.message}`); }
 
 $('evidence-search').addEventListener('input', renderEvidence);

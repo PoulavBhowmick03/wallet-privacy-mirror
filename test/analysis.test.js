@@ -2,14 +2,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { analyze, eth } from '../src/analysis.js';
 import { SAMPLE_ADDRESS as address, sampleTransactions } from '../src/sample.js';
-import { fetchTransactions, validateSelections, runAI } from '../src/providers.js';
+import { fetchTransactions, fetchTokenTransfers, validateSelections, runAI } from '../src/providers.js';
 const start = Date.parse('2026-07-01T00:00:00Z') / 1000, end = Date.parse('2026-09-30T23:59:59Z') / 1000;
 const report = (transactions = sampleTransactions()) => analyze({ address, transactions, start, end, source: 'sample' });
 test('sample findings cite fixture evidence only, with exact ETH sums', () => {
   const r = report();
-  assert.equal(r.stats.transfers, 24); assert.equal(r.stats.counterparties, 6);
+  assert.equal(r.stats.transfers, 27); assert.equal(r.stats.counterparties, 7);
   assert.equal(r.stats.incoming, '3.66'); assert.equal(r.stats.outgoing, '2.651');
-  assert.equal(r.interpretations.length, 3);
+  assert.equal(r.interpretations.length, 4);
   assert.ok(r.findings.filter(f => f.status !== 'unknown').every(f => f.evidence.every(id => r.transactions.some(t => t.id === id))));
   assert.ok(r.transactions.every(t => t.synthetic && t.id.startsWith('sample-')));
 });
@@ -32,7 +32,7 @@ test('varying amounts do not support recurring-payment hypothesis', () => {
 });
 test('ETH concentration evidence includes denominator transactions', () => {
   const r = report(), f = r.findings.find(f => f.id === 'concentration');
-  assert.deepEqual(f.evidence, r.transactions.filter(t => t.from === address).map(t => t.id));
+  assert.deepEqual(f.evidence, r.transactions.filter(t => t.from === address && !t.asset).map(t => t.id));
   assert.match(f.body, /47\.5%/);
 });
 test('live cap reports incomplete coverage', () => { const r = analyze({ address, transactions: [], start, end, source: 'live', fetchedCount: 100 }); assert.equal(r.capReached, true); });
@@ -70,4 +70,30 @@ test('AI request uses structured IDs, disables response storage, and returns rea
 });
 test('incomplete AI output cannot become findings', async () => {
   await assert.rejects(runAI(report(), 'test', 'gpt-6.1-sol', async () => ({ ok: true, json: async () => ({ status: 'incomplete' }) })), /did not complete/);
+});
+
+test('stablecoin series form their own hypothesis and stay out of ETH totals', () => {
+  const r = report(), f = r.findings.find(f => f.key === 'recurring:outgoing:USDC:1500000000');
+  assert.ok(f); assert.match(f.body, /1500-1500 USDC/);
+  assert.equal(r.stats.tokenTransfers, 3); assert.equal(r.stats.tokens.USDC.outgoing, '4500'); assert.equal(r.stats.outgoing, '2.651');
+});
+test('equal amounts of different assets are not one recurring series', () => {
+  const rows = sampleTransactions().map(t => t.asset === 'USDC' && t.id === 'sample-026' ? { ...t, asset: 'DAI', decimals: 18 } : t);
+  assert.equal(report(rows).findings.some(f => f.key?.startsWith('recurring:outgoing:USDC')), false);
+});
+test('token transfers keep only allowlisted stablecoin contracts, not spoofed symbols', async () => {
+  const base = { hash: `0x${'a'.repeat(64)}`, from: `0x${'2'.repeat(40)}`, to: address, value: '5000000', timeStamp: '1780000000' };
+  const fetcher = async () => ({ ok: true, json: async () => ({ status: '1', result: [
+    { ...base, contractAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', tokenSymbol: 'USDC', tokenDecimal: '6' },
+    { ...base, contractAddress: `0x${'9'.repeat(40)}`, tokenSymbol: 'USDC', tokenDecimal: '6' },
+    { ...base, contractAddress: '0xdac17f958d2ee523a2206206994597c13d831ec7', tokenSymbol: 'USDT', tokenDecimal: '6' },
+  ] }) });
+  const { rows, fetched } = await fetchTokenTransfers(address, 'key', fetcher);
+  assert.equal(fetched, 3); assert.deepEqual(rows.map(r => r.asset), ['USDC', 'USDT']);
+  assert.deepEqual(rows.map(r => r.id), [base.hash, `${base.hash}#2`]);
+});
+
+test('a fixed series from one counterparty is found among its other transfers', () => {
+  const rows = [...sampleTransactions(), { id: 'extra-1', from: `0x${'4'.repeat(40)}`, to: address, wei: '60000000000000000', timestamp: Date.parse('2026-08-20T09:00:00Z') / 1000, failed: false, synthetic: true }];
+  assert.ok(report(rows).findings.some(f => f.key === 'recurring:incoming:ETH:1200000000000000000'));
 });

@@ -1,8 +1,8 @@
-import { eth } from './analysis.js';
+import { amountText } from './analysis.js';
 
 export const PATTERNS = ['amount_reuse', 'activity_burst', 'inbound_outbound_sequence'];
 export const PATTERN_RULES = {
-  amount_reuse: 'At least two outgoing transfers of exactly the same wei amount to at least two different recipients.',
+  amount_reuse: 'At least two outgoing transfers of exactly the same amount of the same asset (compare asset and baseUnits) to at least two different recipients.',
   activity_burst: 'At least three distinct transfers within a six-hour span.',
   inbound_outbound_sequence: 'Exactly two transfers: an incoming transfer followed strictly later by an outgoing transfer within 24 hours. This is temporal order only, not evidence that the received funds were forwarded.',
 };
@@ -23,12 +23,13 @@ export function verifyProposals(proposals, report) {
     const rows = proposal.evidence.map(e => byId.get(e)).sort((a, b) => a.timestamp - b.timestamp || a.id.localeCompare(b.id));
     let evidence = rows.map(t => t.id), title, body, key;
     if (proposal.category === 'amount_reuse') {
-      if (rows.some(t => t.from.toLowerCase() !== report.address || BigInt(t.wei) !== BigInt(rows[0].wei)) || new Set(rows.map(t => t.to.toLowerCase())).size < 2) { reject('The cited transfers are not equal-value outgoing transfers to distinct recipients.'); continue; }
+      const asset = t => t.asset || 'ETH';
+      if (rows.some(t => t.from.toLowerCase() !== report.address || asset(t) !== asset(rows[0]) || BigInt(t.wei) !== BigInt(rows[0].wei)) || new Set(rows.map(t => t.to.toLowerCase())).size < 2) { reject('The cited transfers are not equal-value outgoing transfers of one asset to distinct recipients.'); continue; }
       // Expand to all matching rows, so subsets cannot inflate the finding count.
-      const matching = report.transactions.filter(t => t.from.toLowerCase() === report.address && BigInt(t.wei) === BigInt(rows[0].wei));
-      evidence = matching.map(t => t.id); key = `amount_reuse:${BigInt(rows[0].wei)}`;
-      title = 'The same ETH amount went to different addresses';
-      body = `${matching.length} outgoing transfers of exactly ${eth(rows[0].wei)} ETH went to ${new Set(matching.map(t => t.to.toLowerCase())).size} distinct recipients in the fetched window. Equal amounts do not establish shared ownership or payment purpose.`;
+      const matching = report.transactions.filter(t => t.from.toLowerCase() === report.address && asset(t) === asset(rows[0]) && BigInt(t.wei) === BigInt(rows[0].wei));
+      evidence = matching.map(t => t.id); key = `amount_reuse:${asset(rows[0])}:${BigInt(rows[0].wei)}`;
+      title = `The same ${asset(rows[0])} amount went to different addresses`;
+      body = `${matching.length} outgoing transfers of exactly ${amountText(rows[0])} went to ${new Set(matching.map(t => t.to.toLowerCase())).size} distinct recipients in the fetched window. Equal amounts do not establish shared ownership or payment purpose.`;
     } else if (proposal.category === 'activity_burst') {
       const span = rows.at(-1).timestamp - rows[0].timestamp;
       if (rows.length < 3 || span > 6 * 3600) { reject('The cited records do not contain at least three transfers within six hours.'); continue; }
@@ -42,7 +43,7 @@ export function verifyProposals(proposals, report) {
       if (rows.length !== 2 || rows[0].to.toLowerCase() !== report.address || rows[1].from.toLowerCase() !== report.address || gap <= 0 || gap > 86400) { reject('The records are not an incoming transfer followed by an outgoing transfer within 24 hours.'); continue; }
       key = `inbound_outbound_sequence:${evidence.join(',')}`;
       title = 'An outgoing transfer followed a receipt';
-      body = `A receipt of ${eth(rows[0].wei)} ETH preceded an outgoing transfer of ${eth(rows[1].wei)} ETH by ${Math.ceil(gap / 60)} minutes. Timing alone does not show that the same funds moved onward or that these transactions are related.`;
+      body = `A receipt of ${amountText(rows[0])} preceded an outgoing transfer of ${amountText(rows[1])} by ${Math.ceil(gap / 60)} minutes. Timing alone does not show that the same funds moved onward or that these transactions are related.`;
     }
     if (seen.has(key)) { reject('Duplicate of an already accepted pattern.'); continue; }
     seen.add(key);

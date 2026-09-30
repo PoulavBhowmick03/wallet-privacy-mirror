@@ -13,9 +13,12 @@ test('recorded snapshot is real, internally consistent, and linked to an officia
 });
 test('predefined cases include negative patterns and a recorded chain case', () => {
   const cases = evaluationCases(snapshot);
-  assert.equal(cases.length, 6); assert.equal(cases[0].report.interpretations.length, 1);
+  assert.equal(cases.length, 11); assert.equal(cases[0].report.interpretations.length, 1);
   assert.equal(cases[1].report.interpretations.length, 0);
-  assert.deepEqual(cases[4].expectedPatterns, []); assert.equal(cases[5].report, snapshot);
+  assert.deepEqual(cases[4].expectedPatterns, []); assert.equal(cases.at(-1).report, snapshot);
+  // Every near-miss case expects no accepted pattern.
+  for (const id of ['near-burst', 'near-equal-amounts', 'late-forward', 'same-recipient-equal', 'mixed-asset-equal'])
+    assert.deepEqual(cases.find(c => c.id === id).expectedPatterns, []);
 });
 test('evaluation records missed patterns and unexpected patterns, not just accepted count', () => {
   const item = evaluationCases(snapshot)[2];
@@ -26,4 +29,15 @@ test('evaluation records missed patterns and unexpected patterns, not just accep
 test('credit exhaustion is reported as billing failure, not a fabricated AI report', async () => {
   await assert.rejects(runAI(snapshot, 'mock', 'gpt-6.1-sol', async () => ({ ok: false, status: 429,
     json: async () => ({ error: { code: 'credit_balance_exhausted', type: 'insufficient_quota' } }) })), /Add API credits/);
+});
+
+test('near-miss proposals are rejected by the evidence checks', async () => {
+  const { verifyProposals } = await import('../src/verification.js');
+  const cases = evaluationCases(snapshot), ids = id => cases.find(c => c.id === id).report.transactions.map(t => t.id);
+  const check = (id, category) => verifyProposals([{ category, evidence: ids(id) }], cases.find(c => c.id === id).report);
+  assert.equal(check('near-burst', 'activity_burst').rejected.length, 1);
+  assert.equal(check('near-equal-amounts', 'amount_reuse').rejected.length, 1);
+  assert.equal(check('late-forward', 'inbound_outbound_sequence').rejected.length, 1);
+  assert.equal(check('same-recipient-equal', 'amount_reuse').rejected.length, 1);
+  assert.equal(check('mixed-asset-equal', 'amount_reuse').rejected.length, 1);
 });

@@ -1,0 +1,1705 @@
+{
+  "createdAt": "2026-09-30T11:27:04.836Z",
+  "model": "gpt-6.1-sol",
+  "mode": "live-model-evaluation",
+  "runsPerCase": 3,
+  "scope": "11 predefined cases, 3 model attempt(s) per case. Category coverage after pattern checks; not general accuracy or unconstrained inference. Synthetic cases are invented; the Lido case contains recorded public transactions. Near-miss cases test whether evidence checks reject over-claims.",
+  "cases": [
+    {
+      "id": "regular-series",
+      "description": "Three equal outgoing amounts to one address at seven-day intervals.",
+      "expectedPatterns": [],
+      "expectedRecurring": true,
+      "transfers": 3,
+      "baselineFindings": 3,
+      "baselineRecurring": 1,
+      "attempts": [
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [
+              {
+                "id": "recurring-cadence-1",
+                "findingId": "cadence-1",
+                "title": "Regular outgoing ETH transfers of a similar amount",
+                "body": "3 outgoing transfers involving 0x2222...2222, 0.1-0.1 ETH, about 7.0 days apart. A scheduled payment or automated movement is possible. Purpose and ownership remain unknown.",
+                "evidence": [
+                  "eval-regular-0",
+                  "eval-regular-1",
+                  "eval-regular-2"
+                ]
+              }
+            ],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 1219,
+              "input_tokens_details": {
+                "cache_write_tokens": 1216,
+                "cached_tokens": 0
+              },
+              "output_tokens": 40,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 1259
+            },
+            "cost": {
+              "lower": 0.002838,
+              "upper": 0.0034475,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 2727,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": true,
+            "expectedRecurring": true,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [
+              {
+                "id": "recurring-cadence-1",
+                "findingId": "cadence-1",
+                "title": "Regular outgoing ETH transfers of a similar amount",
+                "body": "3 outgoing transfers involving 0x2222...2222, 0.1-0.1 ETH, about 7.0 days apart. A scheduled payment or automated movement is possible. Purpose and ownership remain unknown.",
+                "evidence": [
+                  "eval-regular-0",
+                  "eval-regular-1",
+                  "eval-regular-2"
+                ]
+              }
+            ],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 1219,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 1216
+              },
+              "output_tokens": 40,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 1259
+            },
+            "cost": {
+              "lower": 0.0005276,
+              "upper": 0.0005291,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 3369,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": true,
+            "expectedRecurring": true,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [
+              {
+                "id": "recurring-cadence-1",
+                "findingId": "cadence-1",
+                "title": "Regular outgoing ETH transfers of a similar amount",
+                "body": "3 outgoing transfers involving 0x2222...2222, 0.1-0.1 ETH, about 7.0 days apart. A scheduled payment or automated movement is possible. Purpose and ownership remain unknown.",
+                "evidence": [
+                  "eval-regular-0",
+                  "eval-regular-1",
+                  "eval-regular-2"
+                ]
+              }
+            ],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 1219,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 1216
+              },
+              "output_tokens": 40,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 1259
+            },
+            "cost": {
+              "lower": 0.0005276,
+              "upper": 0.0005291,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 2863,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": true,
+            "expectedRecurring": true,
+            "passed": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "irregular-series",
+      "description": "Equal outgoing amounts with one-day and sixteen-day gaps. No recurring candidate.",
+      "expectedPatterns": [],
+      "expectedRecurring": false,
+      "transfers": 3,
+      "baselineFindings": 2,
+      "baselineRecurring": 0,
+      "attempts": [
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 951,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 19,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 970
+            },
+            "cost": {
+              "lower": 0.002092,
+              "upper": 0.0025675,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 2002,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 951,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 19,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 970
+            },
+            "cost": {
+              "lower": 0.002092,
+              "upper": 0.0025675,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 1922,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 951,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 19,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 970
+            },
+            "cost": {
+              "lower": 0.002092,
+              "upper": 0.0025675,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 1676,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "equal-amount-burst",
+      "description": "Three equal amounts sent to two recipients within two hours.",
+      "expectedPatterns": [
+        "amount_reuse",
+        "activity_burst"
+      ],
+      "expectedRecurring": false,
+      "transfers": 3,
+      "baselineFindings": 1,
+      "baselineRecurring": 0,
+      "attempts": [
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [
+              {
+                "id": "proposal-1",
+                "category": "amount_reuse",
+                "status": "observed",
+                "title": "The same ETH amount went to different addresses",
+                "body": "3 outgoing transfers of exactly 0.1 ETH went to 2 distinct recipients in the fetched window. Equal amounts do not establish shared ownership or payment purpose.",
+                "evidence": [
+                  "eval-equal-0",
+                  "eval-equal-1",
+                  "eval-equal-2"
+                ],
+                "method": "At least two outgoing transfers of exactly the same amount of the same asset (compare asset and baseUnits) to at least two different recipients.",
+                "verification": "Pattern checked against fetched records. Payment purpose and ownership remain unknown."
+              },
+              {
+                "id": "proposal-2",
+                "category": "activity_burst",
+                "status": "observed",
+                "title": "Several transfers occurred close together",
+                "body": "3 cited transfers occurred within 120 minutes. This records a burst in the fetched activity, not evidence of a single person, session, or automated process.",
+                "evidence": [
+                  "eval-equal-0",
+                  "eval-equal-1",
+                  "eval-equal-2"
+                ],
+                "method": "At least three distinct transfers within a six-hour span.",
+                "verification": "Pattern checked against fetched records. Payment purpose and ownership remain unknown."
+              }
+            ],
+            "rejected": [],
+            "proposed": 2,
+            "usage": {
+              "input_tokens": 859,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 76,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 935
+            },
+            "cost": {
+              "lower": 0.002478,
+              "upper": 0.0029075,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 2224,
+            "newFindings": 2,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [
+              "activity_burst",
+              "amount_reuse"
+            ],
+            "expected": [
+              "amount_reuse",
+              "activity_burst"
+            ],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [
+              {
+                "id": "proposal-1",
+                "category": "amount_reuse",
+                "status": "observed",
+                "title": "The same ETH amount went to different addresses",
+                "body": "3 outgoing transfers of exactly 0.1 ETH went to 2 distinct recipients in the fetched window. Equal amounts do not establish shared ownership or payment purpose.",
+                "evidence": [
+                  "eval-equal-0",
+                  "eval-equal-1",
+                  "eval-equal-2"
+                ],
+                "method": "At least two outgoing transfers of exactly the same amount of the same asset (compare asset and baseUnits) to at least two different recipients.",
+                "verification": "Pattern checked against fetched records. Payment purpose and ownership remain unknown."
+              },
+              {
+                "id": "proposal-2",
+                "category": "activity_burst",
+                "status": "observed",
+                "title": "Several transfers occurred close together",
+                "body": "3 cited transfers occurred within 120 minutes. This records a burst in the fetched activity, not evidence of a single person, session, or automated process.",
+                "evidence": [
+                  "eval-equal-0",
+                  "eval-equal-1",
+                  "eval-equal-2"
+                ],
+                "method": "At least three distinct transfers within a six-hour span.",
+                "verification": "Pattern checked against fetched records. Payment purpose and ownership remain unknown."
+              }
+            ],
+            "rejected": [],
+            "proposed": 2,
+            "usage": {
+              "input_tokens": 859,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 76,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 935
+            },
+            "cost": {
+              "lower": 0.002478,
+              "upper": 0.0029075,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 2564,
+            "newFindings": 2,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [
+              "activity_burst",
+              "amount_reuse"
+            ],
+            "expected": [
+              "amount_reuse",
+              "activity_burst"
+            ],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [
+              {
+                "id": "proposal-1",
+                "category": "amount_reuse",
+                "status": "observed",
+                "title": "The same ETH amount went to different addresses",
+                "body": "3 outgoing transfers of exactly 0.1 ETH went to 2 distinct recipients in the fetched window. Equal amounts do not establish shared ownership or payment purpose.",
+                "evidence": [
+                  "eval-equal-0",
+                  "eval-equal-1",
+                  "eval-equal-2"
+                ],
+                "method": "At least two outgoing transfers of exactly the same amount of the same asset (compare asset and baseUnits) to at least two different recipients.",
+                "verification": "Pattern checked against fetched records. Payment purpose and ownership remain unknown."
+              },
+              {
+                "id": "proposal-2",
+                "category": "activity_burst",
+                "status": "observed",
+                "title": "Several transfers occurred close together",
+                "body": "3 cited transfers occurred within 120 minutes. This records a burst in the fetched activity, not evidence of a single person, session, or automated process.",
+                "evidence": [
+                  "eval-equal-0",
+                  "eval-equal-1",
+                  "eval-equal-2"
+                ],
+                "method": "At least three distinct transfers within a six-hour span.",
+                "verification": "Pattern checked against fetched records. Payment purpose and ownership remain unknown."
+              }
+            ],
+            "rejected": [],
+            "proposed": 2,
+            "usage": {
+              "input_tokens": 859,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 76,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 935
+            },
+            "cost": {
+              "lower": 0.002478,
+              "upper": 0.0029075,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 2715,
+            "newFindings": 2,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [
+              "activity_burst",
+              "amount_reuse"
+            ],
+            "expected": [
+              "amount_reuse",
+              "activity_burst"
+            ],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "received-then-sent",
+      "description": "An incoming transfer precedes an outgoing transfer by one hour.",
+      "expectedPatterns": [
+        "inbound_outbound_sequence"
+      ],
+      "expectedRecurring": false,
+      "transfers": 2,
+      "baselineFindings": 1,
+      "baselineRecurring": 0,
+      "attempts": [
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [
+              {
+                "id": "proposal-1",
+                "category": "inbound_outbound_sequence",
+                "status": "observed",
+                "title": "An outgoing transfer followed a receipt",
+                "body": "A receipt of 0.1 ETH preceded an outgoing transfer of 0.05 ETH by 60 minutes. Timing alone does not show that the same funds moved onward or that these transactions are related.",
+                "evidence": [
+                  "eval-receive",
+                  "eval-send"
+                ],
+                "method": "Exactly two transfers: an incoming transfer followed strictly later by an outgoing transfer within 24 hours. This is temporal order only, not evidence that the received funds were forwarded.",
+                "verification": "Pattern checked against fetched records. Payment purpose and ownership remain unknown."
+              }
+            ],
+            "rejected": [],
+            "proposed": 1,
+            "usage": {
+              "input_tokens": 756,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 40,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 796
+            },
+            "cost": {
+              "lower": 0.001912,
+              "upper": 0.00229,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 2716,
+            "newFindings": 1,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [
+              "inbound_outbound_sequence"
+            ],
+            "expected": [
+              "inbound_outbound_sequence"
+            ],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [
+              {
+                "id": "proposal-1",
+                "category": "inbound_outbound_sequence",
+                "status": "observed",
+                "title": "An outgoing transfer followed a receipt",
+                "body": "A receipt of 0.1 ETH preceded an outgoing transfer of 0.05 ETH by 60 minutes. Timing alone does not show that the same funds moved onward or that these transactions are related.",
+                "evidence": [
+                  "eval-receive",
+                  "eval-send"
+                ],
+                "method": "Exactly two transfers: an incoming transfer followed strictly later by an outgoing transfer within 24 hours. This is temporal order only, not evidence that the received funds were forwarded.",
+                "verification": "Pattern checked against fetched records. Payment purpose and ownership remain unknown."
+              }
+            ],
+            "rejected": [],
+            "proposed": 1,
+            "usage": {
+              "input_tokens": 756,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 40,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 796
+            },
+            "cost": {
+              "lower": 0.001912,
+              "upper": 0.00229,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 2086,
+            "newFindings": 1,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [
+              "inbound_outbound_sequence"
+            ],
+            "expected": [
+              "inbound_outbound_sequence"
+            ],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [
+              {
+                "id": "proposal-1",
+                "category": "inbound_outbound_sequence",
+                "status": "observed",
+                "title": "An outgoing transfer followed a receipt",
+                "body": "A receipt of 0.1 ETH preceded an outgoing transfer of 0.05 ETH by 60 minutes. Timing alone does not show that the same funds moved onward or that these transactions are related.",
+                "evidence": [
+                  "eval-receive",
+                  "eval-send"
+                ],
+                "method": "Exactly two transfers: an incoming transfer followed strictly later by an outgoing transfer within 24 hours. This is temporal order only, not evidence that the received funds were forwarded.",
+                "verification": "Pattern checked against fetched records. Payment purpose and ownership remain unknown."
+              }
+            ],
+            "rejected": [],
+            "proposed": 1,
+            "usage": {
+              "input_tokens": 756,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 40,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 796
+            },
+            "cost": {
+              "lower": 0.001912,
+              "upper": 0.00229,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 2046,
+            "newFindings": 1,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [
+              "inbound_outbound_sequence"
+            ],
+            "expected": [
+              "inbound_outbound_sequence"
+            ],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "sent-then-received",
+      "description": "The reversed order is not a received-then-sent sequence.",
+      "expectedPatterns": [],
+      "expectedRecurring": false,
+      "transfers": 2,
+      "baselineFindings": 1,
+      "baselineRecurring": 0,
+      "attempts": [
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 763,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 19,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 782
+            },
+            "cost": {
+              "lower": 0.001716,
+              "upper": 0.0020975,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 2232,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 763,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 19,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 782
+            },
+            "cost": {
+              "lower": 0.001716,
+              "upper": 0.0020975,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 1783,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 763,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 19,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 782
+            },
+            "cost": {
+              "lower": 0.001716,
+              "upper": 0.0020975,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 1829,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "near-burst",
+      "description": "Three transfers spanning six hours and ten minutes, just outside the six-hour burst rule.",
+      "expectedPatterns": [],
+      "expectedRecurring": false,
+      "transfers": 3,
+      "baselineFindings": 1,
+      "baselineRecurring": 0,
+      "attempts": [
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 877,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 36,
+              "output_tokens_details": {
+                "reasoning_tokens": 15
+              },
+              "total_tokens": 913
+            },
+            "cost": {
+              "lower": 0.002114,
+              "upper": 0.0025525,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 2082,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 877,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 40,
+              "output_tokens_details": {
+                "reasoning_tokens": 19
+              },
+              "total_tokens": 917
+            },
+            "cost": {
+              "lower": 0.002154,
+              "upper": 0.0025925,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 2794,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 877,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 34,
+              "output_tokens_details": {
+                "reasoning_tokens": 13
+              },
+              "total_tokens": 911
+            },
+            "cost": {
+              "lower": 0.002094,
+              "upper": 0.0025325,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 1818,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "near-equal-amounts",
+      "description": "Two outgoing amounts to different recipients that differ by one wei.",
+      "expectedPatterns": [],
+      "expectedRecurring": false,
+      "transfers": 2,
+      "baselineFindings": 1,
+      "baselineRecurring": 0,
+      "attempts": [
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 790,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 19,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 809
+            },
+            "cost": {
+              "lower": 0.00177,
+              "upper": 0.002165,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 1806,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 790,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 19,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 809
+            },
+            "cost": {
+              "lower": 0.00177,
+              "upper": 0.002165,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 1893,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 790,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 19,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 809
+            },
+            "cost": {
+              "lower": 0.00177,
+              "upper": 0.002165,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 1671,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "late-forward",
+      "description": "An incoming transfer followed by an outgoing transfer 25 hours later, outside the 24-hour rule.",
+      "expectedPatterns": [],
+      "expectedRecurring": false,
+      "transfers": 2,
+      "baselineFindings": 1,
+      "baselineRecurring": 0,
+      "attempts": [
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 766,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 36,
+              "output_tokens_details": {
+                "reasoning_tokens": 15
+              },
+              "total_tokens": 802
+            },
+            "cost": {
+              "lower": 0.001892,
+              "upper": 0.002275,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 2509,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 766,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 37,
+              "output_tokens_details": {
+                "reasoning_tokens": 16
+              },
+              "total_tokens": 803
+            },
+            "cost": {
+              "lower": 0.001902,
+              "upper": 0.002285,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 1888,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 766,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 35,
+              "output_tokens_details": {
+                "reasoning_tokens": 14
+              },
+              "total_tokens": 801
+            },
+            "cost": {
+              "lower": 0.001882,
+              "upper": 0.002265,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 1964,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "same-recipient-equal",
+      "description": "Two equal outgoing amounts to the same recipient. Amount reuse needs two different recipients.",
+      "expectedPatterns": [],
+      "expectedRecurring": false,
+      "transfers": 2,
+      "baselineFindings": 1,
+      "baselineRecurring": 0,
+      "attempts": [
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 773,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 19,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 792
+            },
+            "cost": {
+              "lower": 0.001736,
+              "upper": 0.0021225,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 2360,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 773,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 19,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 792
+            },
+            "cost": {
+              "lower": 0.001736,
+              "upper": 0.0021225,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 2221,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 773,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 19,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 792
+            },
+            "cost": {
+              "lower": 0.001736,
+              "upper": 0.0021225,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 1976,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "mixed-asset-equal",
+      "description": "100 USDC and 100 DAI to two recipients. The number matches, but the asset and base units differ.",
+      "expectedPatterns": [],
+      "expectedRecurring": false,
+      "transfers": 2,
+      "baselineFindings": 0,
+      "baselineRecurring": 0,
+      "attempts": [
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 679,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 19,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 698
+            },
+            "cost": {
+              "lower": 0.001548,
+              "upper": 0.0018875,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 1896,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 679,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 19,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 698
+            },
+            "cost": {
+              "lower": 0.001548,
+              "upper": 0.0018875,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 3246,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [],
+            "rejected": [],
+            "proposed": 0,
+            "usage": {
+              "input_tokens": 679,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+              },
+              "output_tokens": 19,
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "total_tokens": 698
+            },
+            "cost": {
+              "lower": 0.001548,
+              "upper": 0.0018875,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 1816,
+            "newFindings": 0,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [],
+            "expected": [],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "lido-mainnet",
+      "description": "Recorded public protocol receipts. Dense incoming transfers support activity bursts; no outgoing transfers exist in this snapshot.",
+      "expectedPatterns": [
+        "activity_burst"
+      ],
+      "expectedRecurring": false,
+      "transfers": 100,
+      "baselineFindings": 2,
+      "baselineRecurring": 0,
+      "attempts": [
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [
+              {
+                "id": "proposal-1",
+                "category": "activity_burst",
+                "status": "observed",
+                "title": "Several transfers occurred close together",
+                "body": "9 cited transfers occurred within 106 minutes. This records a burst in the fetched activity, not evidence of a single person, session, or automated process.",
+                "evidence": [
+                  "0x5c488a60f4c0fb24674156b735a415ac64f1da0f6222365b7d06889967d0d0b3",
+                  "0x78baa149ef69627d7a4ef3e82f364dda463ca9a5ad0a234b35d8790bc53bcd97",
+                  "0x0b03ebd536658d68524e3f7eb57c51abe09f8a61f680689cd175f9e011513d7f",
+                  "0xa016bc8cdcdd8595d340510377508e5de185641db3410fdab9428771e7f85829",
+                  "0x37315a317bf8bf69c6b1f085bc089a2a444132a2973f2804f075a149d3a4d594",
+                  "0x65b2f39418bc2fe7f3e7d7e3c99d2c1a4426d780dfda0f8f06e4a53b545c3d2b",
+                  "0x600b47c15d1ffc2f8eb34c7a490b1b9cd2b3081ec5c5b3fb9d6ca5ce594db4dd",
+                  "0x1a3f714fd28f4e2f0f4096679ec1b72a850c9f5016fca228048f113f64a56cce",
+                  "0xcdcb4649afde5d461c15741f8b6f65d2bfe2eff725d1f2b02202d6d9cd3c3894"
+                ],
+                "method": "At least three distinct transfers within a six-hour span.",
+                "verification": "Pattern checked against fetched records. Payment purpose and ownership remain unknown."
+              }
+            ],
+            "rejected": [],
+            "proposed": 1,
+            "usage": {
+              "input_tokens": 20259,
+              "input_tokens_details": {
+                "cache_write_tokens": 16018,
+                "cached_tokens": 4238
+              },
+              "output_tokens": 450,
+              "output_tokens_details": {
+                "reasoning_tokens": 42
+              },
+              "total_tokens": 20709
+            },
+            "cost": {
+              "lower": 0.0369658,
+              "upper": 0.044976300000000004,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 7543,
+            "newFindings": 1,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [
+              "activity_burst"
+            ],
+            "expected": [
+              "activity_burst"
+            ],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [
+              {
+                "id": "proposal-1",
+                "category": "activity_burst",
+                "status": "observed",
+                "title": "Several transfers occurred close together",
+                "body": "9 cited transfers occurred within 106 minutes. This records a burst in the fetched activity, not evidence of a single person, session, or automated process.",
+                "evidence": [
+                  "0x5c488a60f4c0fb24674156b735a415ac64f1da0f6222365b7d06889967d0d0b3",
+                  "0x78baa149ef69627d7a4ef3e82f364dda463ca9a5ad0a234b35d8790bc53bcd97",
+                  "0x0b03ebd536658d68524e3f7eb57c51abe09f8a61f680689cd175f9e011513d7f",
+                  "0xa016bc8cdcdd8595d340510377508e5de185641db3410fdab9428771e7f85829",
+                  "0x37315a317bf8bf69c6b1f085bc089a2a444132a2973f2804f075a149d3a4d594",
+                  "0x65b2f39418bc2fe7f3e7d7e3c99d2c1a4426d780dfda0f8f06e4a53b545c3d2b",
+                  "0x600b47c15d1ffc2f8eb34c7a490b1b9cd2b3081ec5c5b3fb9d6ca5ce594db4dd",
+                  "0x1a3f714fd28f4e2f0f4096679ec1b72a850c9f5016fca228048f113f64a56cce",
+                  "0xcdcb4649afde5d461c15741f8b6f65d2bfe2eff725d1f2b02202d6d9cd3c3894"
+                ],
+                "method": "At least three distinct transfers within a six-hour span.",
+                "verification": "Pattern checked against fetched records. Payment purpose and ownership remain unknown."
+              }
+            ],
+            "rejected": [],
+            "proposed": 1,
+            "usage": {
+              "input_tokens": 20259,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 20256
+              },
+              "output_tokens": 567,
+              "output_tokens_details": {
+                "reasoning_tokens": 159
+              },
+              "total_tokens": 20826
+            },
+            "cost": {
+              "lower": 0.0077016,
+              "upper": 0.0077031,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 11722,
+            "newFindings": 1,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [
+              "activity_burst"
+            ],
+            "expected": [
+              "activity_burst"
+            ],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        },
+        {
+          "aiStatus": "completed",
+          "result": {
+            "model": "gpt-6.1-sol",
+            "selections": [],
+            "accepted": [
+              {
+                "id": "proposal-1",
+                "category": "activity_burst",
+                "status": "observed",
+                "title": "Several transfers occurred close together",
+                "body": "9 cited transfers occurred within 106 minutes. This records a burst in the fetched activity, not evidence of a single person, session, or automated process.",
+                "evidence": [
+                  "0x5c488a60f4c0fb24674156b735a415ac64f1da0f6222365b7d06889967d0d0b3",
+                  "0x78baa149ef69627d7a4ef3e82f364dda463ca9a5ad0a234b35d8790bc53bcd97",
+                  "0x0b03ebd536658d68524e3f7eb57c51abe09f8a61f680689cd175f9e011513d7f",
+                  "0xa016bc8cdcdd8595d340510377508e5de185641db3410fdab9428771e7f85829",
+                  "0x37315a317bf8bf69c6b1f085bc089a2a444132a2973f2804f075a149d3a4d594",
+                  "0x65b2f39418bc2fe7f3e7d7e3c99d2c1a4426d780dfda0f8f06e4a53b545c3d2b",
+                  "0x600b47c15d1ffc2f8eb34c7a490b1b9cd2b3081ec5c5b3fb9d6ca5ce594db4dd",
+                  "0x1a3f714fd28f4e2f0f4096679ec1b72a850c9f5016fca228048f113f64a56cce",
+                  "0xcdcb4649afde5d461c15741f8b6f65d2bfe2eff725d1f2b02202d6d9cd3c3894"
+                ],
+                "method": "At least three distinct transfers within a six-hour span.",
+                "verification": "Pattern checked against fetched records. Payment purpose and ownership remain unknown."
+              }
+            ],
+            "rejected": [],
+            "proposed": 1,
+            "usage": {
+              "input_tokens": 20259,
+              "input_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 20256
+              },
+              "output_tokens": 452,
+              "output_tokens_details": {
+                "reasoning_tokens": 44
+              },
+              "total_tokens": 20711
+            },
+            "cost": {
+              "lower": 0.0065516,
+              "upper": 0.0065531,
+              "note": "Estimated Standard API token cost; upper bound treats uncached input as cache writes. Excludes regional premiums, tax, and provider data costs. Not a billed receipt."
+            },
+            "elapsedMs": 8398,
+            "newFindings": 1,
+            "note": "Additional means absent from this baseline report, not impossible to find with code. The model proposes typed patterns; code checks amounts, directions, and timing and writes the displayed claim. No identities, purposes, or fund provenance are established."
+          },
+          "score": {
+            "found": [
+              "activity_burst"
+            ],
+            "expected": [
+              "activity_burst"
+            ],
+            "missing": [],
+            "unexpected": [],
+            "recurringSelected": false,
+            "expectedRecurring": false,
+            "passed": true
+          }
+        }
+      ]
+    }
+  ],
+  "completed": 33,
+  "passed": 33,
+  "proposed": 12,
+  "accepted": 12,
+  "rejected": 0,
+  "rejections": [],
+  "estimatedCost": {
+    "lower": 0.10690620000000002,
+    "upper": 0.1263532
+  },
+  "blocked": null
+}

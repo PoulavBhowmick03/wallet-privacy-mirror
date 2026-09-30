@@ -9,7 +9,7 @@ test('sample report, status filters, evidence, graph, export, and AI setup', asy
   await expect(page.locator('#evidence-rows a')).toHaveCount(0);
   await page.getByRole('button', { name: 'Close evidence' }).click();
   await page.getByRole('tab', { name: /Hypotheses/ }).click();
-  await expect(page.locator('.finding')).toHaveCount(3);
+  await expect(page.locator('.finding')).toHaveCount(4);
   await page.getByRole('tab', { name: /Unknown/ }).click();
   await expect(page.locator('.finding')).toHaveCount(3);
   await expect(page.locator('.evidence-button')).toHaveCount(0);
@@ -134,4 +134,23 @@ test('switching back from recorded history loads the sample with its correct ove
   await expect(page.locator('#provenance')).toBeHidden();
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('what-if scenarios, planned transfers, and the recorded model run work without external requests', async ({ page }) => {
+  const external = []; page.on('request', r => { if (!r.url().startsWith('http://localhost') && !r.url().startsWith('http://127.0.0.1')) external.push(r.url()); });
+  await page.goto('/'); await expect(page.locator('#results')).toBeVisible();
+  await expect(page.locator('#coverage')).toContainText('3 stablecoin transfers');
+  await page.locator('[data-scenario="stealth"]').click();
+  await expect(page.locator('#scenario-result .diff.removed')).toContainText('Regular incoming ETH transfers');
+  await page.locator('[data-scenario="pool"]').click();
+  await expect(page.locator('#scenario-result .diff.changed')).toContainText('0x0000...00f1');
+  await expect(page.locator('#presend-to')).toHaveValue(`0x${'3'.repeat(40)}`);
+  await page.locator('#presend-run').click();
+  await expect(page.locator('#presend-result')).toContainText('13 outgoing transfers');
+  await page.locator('#presend-to').fill('0x1111111111111111111111111111111111111111'); await page.locator('#presend-run').click();
+  await expect(page.locator('#presend-error')).toContainText('self-transfer');
+  await page.locator('#ai-recorded').click();
+  await expect(page.locator('#ai-result')).toContainText('Recorded run');
+  await expect(page.locator('#ai-result')).toContainText('gpt-6.1-sol');
+  expect(external).toEqual([]);
 });

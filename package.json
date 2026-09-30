@@ -12,7 +12,8 @@
     "verify:chain": "node scripts/verify-chain.js",
     "demo:capture": "node demo/capture.mjs",
     "demo:audio": "node demo/audio.mjs",
-    "demo:render": "node demo/render.mjs"
+    "demo:render": "node demo/render.mjs",
+    "record:model": "node --env-file-if-exists=.env scripts/record-model-runs.js"
   },
   "engines": {
     "node": ">=22"

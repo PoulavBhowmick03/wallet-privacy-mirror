@@ -76,6 +76,7 @@ const easeOut = p => 1 - Math.pow(1 - p, 3);
 const ramp = (t, t0, d) => clamp((t - t0) / d);
 const within = (t, a, b) => t >= a && t < b;
 const S = await (await fetch('./shots/states.json')).json();
+const PAGE_H = Math.max(...Object.values(S.states).map(st => st.y + st.height));
 
 // ---------- build DOM ----------
 const heads = T.headlines.map(h => {
@@ -131,7 +132,7 @@ function cameraAt(t) {
   }
   const s = cam.s * (1 + Math.min(0.025, Math.max(0, t - lastEnd) * 0.006)); // slow push-in while holding
   let tx = T.VIEW.w / 2 - cam.cx * s, ty = T.VIEW.h / 2 - cam.cy * s;
-  tx = clamp(tx, T.VIEW.w - T.PAGE_W * s, 0); ty = clamp(ty, T.VIEW.h - 1900 * s, 0);
+  tx = clamp(tx, T.VIEW.w - T.PAGE_W * s, 0); ty = clamp(ty, T.VIEW.h - PAGE_H * s, 0);
   return { s, tx, ty };
 }
 const toView = (cam, x, y) => ({ x: x * cam.s + cam.tx, y: y * cam.s + cam.ty });

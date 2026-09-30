@@ -40,9 +40,35 @@ Full records: [transaction snapshot](data/lido-mainnet-snapshot.json) and [chain
 
 ## Model comparison
 
-No successful live model result is available. The attempted request returned no model output or token usage.
-No model score, measured runtime, or measured token cost is claimed.
-The evaluation script includes six predefined cases but no measured model scores.
+Model: `gpt-6.1-sol` through the OpenAI Responses API, with `store: false`, low reasoning effort, and a strict JSON schema.
+Runs recorded on September 30, 2026.
+
+### Fixed evaluation
+
+11 cases, 3 attempts each, 33 requests. Full results: [data/model-evaluation.json](data/model-evaluation.json).
+
+| Measurement | Result |
+| --- | --- |
+| Attempts that matched the expected patterns | 33 of 33 |
+| Near-miss attempts with a false finding | 0 of 15 |
+| Model proposals | 12 |
+| Proposals that passed the evidence checks | 12 |
+| Proposals rejected by the evidence checks | 0 |
+| Median request time | 2086 ms (range 1671 to 11722 ms) |
+| Estimated cost, all 33 requests | $0.107 to $0.126 |
+
+The model made no over-claim in these cases, so the evidence checks rejected nothing in live runs.
+Unit tests confirm that the checks reject each near-miss pattern.
+Eleven fixed cases do not measure general model accuracy.
+
+### Saved runs on the public site
+
+| Data | Proposals | Passed checks | Hypotheses selected | Time | Tokens in / out | Estimated cost |
+| --- | --- | --- | --- | --- | --- | --- |
+| Sample, 90 days | 2 | 2 | 4 of 4 | 3966 ms | 4079 / 143 | $0.0096 to $0.0116 |
+| Recorded Lido data | 1 | 1 | none available | 8201 ms | 20271 / 532 | $0.0378 to $0.0458 |
+
+Costs are estimates from returned token counts, not billed amounts.
 
 ## View the records
 

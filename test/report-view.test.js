@@ -9,7 +9,7 @@ test('timeline accounts for every transfer exactly once and retains direction', 
   const ids = buckets.flatMap(b => b.evidence);
   assert.equal(ids.length, report.transactions.length); assert.equal(new Set(ids).size, ids.length);
   assert.equal(buckets.reduce((n, b) => n + b.incoming, 0), 4);
-  assert.equal(buckets.reduce((n, b) => n + b.outgoing, 0), 20);
+  assert.equal(buckets.reduce((n, b) => n + b.outgoing, 0), 23);
   assert.ok(buckets.length <= 14);
 });
 test('timeline contains empty days and records around UTC midnight separately', () => {

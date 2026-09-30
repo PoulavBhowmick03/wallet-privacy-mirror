@@ -2,9 +2,9 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { analyze, ADDRESS } from './src/analysis.js';
-import { sampleTransactions, SAMPLE_ADDRESS } from './src/sample.js';
-import { fetchTransactions, runAI } from './src/providers.js';
+import { runAI } from './src/providers.js';
+import { buildReport, recordedModelRun } from './src/report.js';
+import { plannedTransfer } from './src/scenarios.js';
 
 const port = Number(process.env.PORT || 3000);
 const publicDemo = process.env.VERCEL === '1' || process.env.PUBLIC_DEMO === '1';
@@ -32,34 +32,42 @@ export async function handler(req, res) {
     if (!publicDemo && !allowedHosts.has(req.headers.host)) return json(res, 403, { error: 'This demo only accepts localhost requests.' });
     const pathname = new URL(req.url, `http://127.0.0.1:${port}`).pathname;
     if (pathname.startsWith('/api/') && req.headers.origin && !(publicDemo ? req.headers.origin === `https://${req.headers.host}` : [`http://127.0.0.1:${port}`, `http://localhost:${port}`].includes(req.headers.origin))) return json(res, 403, { error: 'Cross-origin request rejected.' });
-    if (req.method === 'GET' && pathname === '/api/config') return json(res, 200, { live: !publicDemo && Boolean(process.env.ETHERSCAN_API_KEY), ai: !publicDemo && Boolean(process.env.OPENAI_API_KEY), publicDemo, model });
+    if (req.method === 'GET' && pathname === '/api/config') {
+      const ev = await readFile(new URL('./data/model-evaluation.json', import.meta.url), 'utf8').then(JSON.parse).catch(() => null);
+      const evaluation = ev && ev.completed ? { model: ev.model, createdAt: ev.createdAt, cases: ev.cases.length, nearMiss: ev.cases.filter(c => /^(near|late|same|mixed)-/.test(c.id)).length,
+        completed: ev.completed, passed: ev.passed, proposed: ev.proposed, accepted: ev.accepted, rejected: ev.rejected, cost: ev.estimatedCost } : null;
+      return json(res, 200, { live: !publicDemo && Boolean(process.env.ETHERSCAN_API_KEY), ai: !publicDemo && Boolean(process.env.OPENAI_API_KEY), publicDemo, model,
+        modelName: model === 'gpt-6.1-sol' ? 'GPT-6.1 Sol' : model, evaluation });
+    }
     if (req.method === 'POST' && pathname === '/api/report') {
       const input = await body(req), started = performance.now();
-      const sample = input.source === 'sample', recorded = input.source === 'recorded';
-      if (!sample && !recorded && input.source !== 'live') throw new Error('Choose sample, recorded, or live data.');
-      if (publicDemo && !sample && !recorded) return json(res, 403, { error: 'Fresh address queries are unavailable in this public demo. Use the sample or recorded Ethereum data.' });
-      if (!sample && !recorded && (!ADDRESS.test(input.address || '') || input.consent !== true)) throw new Error('Enter a valid address and confirm permission to query it.');
-      if (!sample && !recorded && !process.env.ETHERSCAN_API_KEY) throw new Error('Live data needs ETHERSCAN_API_KEY in the server .env file. The sample needs no key.');
-      const snapshot = recorded ? JSON.parse(await readFile(new URL('./data/lido-mainnet-snapshot.json', import.meta.url), 'utf8')) : null;
-      const address = snapshot?.address || (sample ? SAMPLE_ADDRESS : input.address);
-      const windowDays = Number(input.days || 90);
-      if (![30, 60, 90].includes(windowDays)) throw new Error('Choose a 30, 60, or 90 day window.');
-      const end = snapshot?.end || (sample ? Date.parse('2026-09-30T23:59:59Z') / 1000 : Math.floor(Date.now() / 1000));
-      const start = recorded ? snapshot.start : end - windowDays * 86400;
-      const transactions = snapshot?.transactions || (sample ? sampleTransactions() : await fetchTransactions(address, process.env.ETHERSCAN_API_KEY));
-      const report = analyze({ address, transactions, start, end, source: recorded ? 'live' : input.source });
-      if (recorded) {
-        report.source = 'recorded'; report.recordedAt = snapshot.generatedAt; report.provenance = snapshot.provenance;
-        report.originalFetchMs = snapshot.elapsedMs;
-        report.chainVerification = JSON.parse(await readFile(new URL('./data/lido-chain-verification.json', import.meta.url), 'utf8'));
-      }
+      let report;
+      try { report = await buildReport(input, { publicDemo, etherscanKey: process.env.ETHERSCAN_API_KEY }); }
+      catch (e) { if (e.status) return json(res, e.status, { error: e.message }); throw e; }
       report.elapsedMs = Math.round(performance.now() - started); report.id = randomUUID(); report.generatedAt = new Date().toISOString();
       for (const [id, entry] of reports) if (Date.now() - entry.created > TTL) reports.delete(id);
       if (reports.size >= 50) reports.delete(reports.keys().next().value);
       reports.set(report.id, { report, created: Date.now(), ai: null });
       const reportId = report.id;
-      setTimeout(() => reports.delete(reportId), TTL).unref();
+      setTimeout(() => reports.delete(reportId), TTL).unref?.();
       return json(res, 200, report);
+    }
+    // Sample and recorded reports are rebuilt here; a live report must still be in memory.
+    async function reportFor(input) {
+      if (input.source === 'sample' || input.source === 'recorded') return buildReport({ source: input.source, days: input.days }, { publicDemo });
+      const entry = reports.get(input.reportId);
+      if (!entry || Date.now() - entry.created > TTL) throw new Error('Report expired. Analyze the wallet again.');
+      return entry.report;
+    }
+    if (req.method === 'POST' && pathname === '/api/presend') {
+      const input = await body(req);
+      return json(res, 200, plannedTransfer(await reportFor(input), input));
+    }
+    if (req.method === 'POST' && pathname === '/api/ai-recorded') {
+      const input = await body(req);
+      if (input.source !== 'sample' && input.source !== 'recorded') throw new Error('Recorded model runs exist only for the sample and recorded data.');
+      const run = await recordedModelRun(await reportFor(input));
+      return run ? json(res, 200, run) : json(res, 404, { error: 'No recorded model run matches this window. Choose the 90-day sample or the recorded data.' });
     }
     if (req.method === 'POST' && pathname === '/api/ai') {
       if (publicDemo) return json(res, 403, { error: 'Model comparison is unavailable in this public demo. No paid API request was made.' });
