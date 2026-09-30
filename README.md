@@ -48,6 +48,16 @@ The report can miss earlier activity within that period. When the 100-record lim
 
 Keys stay on the server. Never add `.env` to Git.
 
+### What a query reveals
+
+A live query is itself a disclosure.
+Etherscan receives the queried address, your API key, and the IP address of the machine running the server.
+Etherscan can associate that request with other addresses queried from the same key or IP address.
+The request shows interest in that address, which matters most when the address is your own.
+
+This project does not hide queries from Etherscan.
+The sample and recorded modes make no external requests.
+
 ## What the report measures
 
 Only successful, positive-value ETH transfers are included. Token transfers, internal calls, fees, self-transfers, and other chains are excluded.
@@ -57,7 +67,7 @@ Only successful, positive-value ETH transfers are included. Token transfers, int
 | Repeated address | At least three transfers with the same address |
 | Outgoing concentration | ETH sent to one recipient divided by all outgoing ETH |
 | Activity timing | The busiest fixed three-hour UTC period, with at least five transfers |
-| Possible recurring transfer | At least three transfers in one direction, with similar amounts and regular intervals |
+| Regular transfers of a similar amount | At least three transfers in one direction, with similar amounts and regular intervals |
 
 Recurring intervals average at least five days. Each interval stays within 20% of the mean.
 The amount spread stays within 5% of the smallest amount. These thresholds are demonstration rules, not a tested classifier.
@@ -144,3 +154,7 @@ This command makes up to six paid requests. Results are saved in `artifacts/`, w
 | `api/[action].js` | Vercel function entry point |
 | `public/app.js` | Report interface and evidence controls |
 | `public/report-view.js` | Report summary and timeline buckets |
+
+## License
+
+[MIT](LICENSE)

@@ -52,7 +52,7 @@ export function analyze({ address, transactions, start, end, source, fetchedCoun
       if (average < 5 || gaps.some(g => Math.abs(g - average) > average * 0.2) || (max - min) * 100n > min * 5n) continue;
       const id = `cadence-${interpretations.length + 1}`;
       const evidence = transfers.map(t => t.id);
-      const title = `Possible recurring ${direction} payment`;
+      const title = `Regular ${direction} transfers of a similar amount`;
       const body = `${transfers.length} ${direction} transfers involving ${short(group.address)}, ${eth(min)}-${eth(max)} ETH, about ${average.toFixed(1)} days apart. A scheduled payment or automated movement is possible. Purpose and ownership remain unknown.`;
       findings.push({ id, status: 'hypothesis', title, body, evidence, method: 'At least 3 transfers in one direction; each interval within 20% of its mean (at least 5 days); amount spread at most 5% of minimum. Pattern detection does not establish payment purpose.' });
       interpretations.push({ id: `recurring-${id}`, findingId: id, title, body, evidence });
