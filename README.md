@@ -1,5 +1,7 @@
 # Wallet Privacy Mirror
 
+[Open the demo](https://wallet-privacy-mirror.vercel.app)
+
 Inspect public ETH transfers for an Ethereum address. Each finding includes the transactions behind it.
 
 The report shows repeated addresses, transfer amounts, and activity over time. It separates observed facts from possible explanations and unknown information.
@@ -42,7 +44,7 @@ Select **Address** and enter an address you own, have permission to inspect, or 
 Select the permission checkbox, then select **Analyze**.
 
 Etherscan receives the address. The server fetches the latest 100 normal transactions on Ethereum mainnet, then filters them by the selected period.
-The report can miss earlier activity within that period. A notice appears when the 100-record limit applies.
+The report can miss earlier activity within that period. When the 100-record limit applies, a notice appears.
 
 Keys stay on the server. Never add `.env` to Git.
 
@@ -94,7 +96,7 @@ The model selects existing candidates or proposes amount and timing patterns. Co
 Displayed claims use fixed text. Rejected proposals remain visible for inspection.
 
 The request uses `store: false`. This does not guarantee zero provider retention.
-The interface reports returned token usage and an estimated cost. No successful live model comparison has been measured for this project.
+The interface reports returned token usage and an estimated cost. This project has no successful live model comparison.
 
 ## Data handling
 
@@ -102,7 +104,7 @@ The local server listens on `127.0.0.1`. It holds at most 50 reports in memory f
 There is no database, wallet connection, transaction signing, or application analytics.
 Vercel manages hosting request logs for the public deployment.
 
-Vercel deployments disable fresh queries and model requests, even when provider keys exist in the deployment environment.
+Vercel deployments always disable fresh queries and model requests. Provider keys in the deployment environment cannot enable these requests.
 Do not upload local keys. The `.vercelignore` file excludes local environment files and generated recordings.
 
 The implementation uses [Vercel Node.js Functions](https://vercel.com/docs/functions/configuring-functions/runtime) for reports and serves the interface as static files.
