@@ -22,7 +22,8 @@ Select a finding, address, or activity bar to inspect its transactions. Real tra
 - **Before you send:** adds one planned transfer and shows which findings it would create or strengthen.
 - **Model comparison:** replays a saved GPT-6.1 Sol run for the sample and recorded data.
 
-The public site never makes model requests, so visitors cannot spend the owner's OpenAI balance.
+The sample and recorded data replay saved model runs. For a looked-up address, the public site can run a live comparison on the owner's OpenAI account.
+Live comparisons are limited to 3 per visitor per day and 25 per day for the whole site. The same transactions reuse a cached result for 24 hours.
 Address lookups use the owner's Etherscan key. They are rate-limited per connection and cached for five minutes.
 Etherscan receives each looked-up address. The site returns the report and does not save it.
 
@@ -150,7 +151,10 @@ The local server listens on `127.0.0.1`. It holds at most 50 reports in memory f
 There is no database, wallet connection, transaction signing, or application analytics.
 Vercel manages hosting request logs for the public deployment.
 
-Vercel deployments never make model requests, even with an OpenAI key in the environment.
+Public model requests need `PUBLIC_AI=1`, `OPENAI_API_KEY`, and an [Upstash Redis](https://upstash.com/docs/redis/overall/getstarted) store (`KV_REST_API_URL` and `KV_REST_API_TOKEN`).
+Without all three, the public site makes no model requests. The store holds shared daily counters, because serverless instances do not share memory.
+If the store is unreachable, the request fails without calling OpenAI. Visitors are counted by a hash of their IP address; raw IP addresses are not stored.
+Change the limits with `AI_PER_CLIENT_DAILY` and `AI_DAILY_CAP`. Also set a monthly budget on the OpenAI project as a second limit.
 Address lookups are off unless the deployment sets both `ETHERSCAN_API_KEY` and `PUBLIC_LIVE=1`.
 Each lookup makes two Etherscan requests. A connection can make 12 lookups in 10 minutes, and each server instance allows 40 per minute.
 These limits live in server memory, so separate serverless instances count separately.

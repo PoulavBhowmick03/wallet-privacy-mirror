@@ -44,3 +44,35 @@ test('public address lookups need an explicit switch, stay rate-limited, and nev
     assert.match(JSON.stringify(await planned.json()), /4 outgoing transfers/);
   } finally { child.kill(); await once(child, 'exit'); }
 });
+
+test('public model runs fail closed without the shared store, and enforce daily limits with it', async () => {
+  const { createServer } = await import('node:http');
+  // A minimal stand-in for Upstash's REST pipeline endpoint.
+  const store = new Map();
+  const redis = createServer(async (req, res) => {
+    let text = ''; for await (const c of req) text += c;
+    const out = JSON.parse(text).map(([cmd, key, value, ...rest]) => {
+      if (cmd === 'SET') { if (rest.includes('NX') && store.has(key)) return { result: null }; store.set(key, value); return { result: 'OK' }; }
+      if (cmd === 'INCR') { const n = Number(store.get(key) || 0) + 1; store.set(key, String(n)); return { result: n }; }
+      if (cmd === 'GET') return { result: store.get(key) ?? null };
+      return { error: 'unsupported' };
+    });
+    res.end(JSON.stringify(out));
+  }).listen(3196);
+  const start = env => spawn(process.execPath, ['server.js'], { env: { ...process.env, PUBLIC_DEMO: '1', PUBLIC_AI: '1', OPENAI_API_KEY: 'test-key', ...env }, stdio: ['ignore', 'pipe', 'pipe'] });
+  const ready = child => Promise.race([once(child.stdout, 'data'), once(child, 'exit').then(() => { throw new Error('Server exited before startup'); })]);
+  const closed = start({ PORT: '3195', KV_REST_API_URL: '', KV_REST_API_TOKEN: '', UPSTASH_REDIS_REST_URL: '', UPSTASH_REDIS_REST_TOKEN: '' });
+  const open = start({ PORT: '3194', KV_REST_API_URL: 'http://127.0.0.1:3196', KV_REST_API_TOKEN: 't', AI_PER_CLIENT_DAILY: '2', AI_DAILY_CAP: '5' });
+  try {
+    await ready(closed); await ready(open);
+    assert.equal((await (await fetch('http://127.0.0.1:3195/api/config')).json()).ai, false);
+    assert.equal((await fetch('http://127.0.0.1:3195/api/ai', { method: 'POST', body: '{"consent":true}' })).status, 403);
+    // One transfer makes runAI stop before any OpenAI request, so only the limiter is exercised.
+    const address = `0x${'1'.repeat(40)}`;
+    const payload = { consent: true, source: 'live', address, start: 0, end: 2e9, transactions: [{ id: 'one', from: address, to: `0x${'3'.repeat(40)}`, wei: '1', timestamp: 1780000000 }] };
+    const statuses = [];
+    for (let i = 0; i < 3; i++) statuses.push((await fetch('http://127.0.0.1:3194/api/ai', { method: 'POST', body: JSON.stringify(payload) })).status);
+    assert.deepEqual(statuses, [400, 400, 429]);
+    assert.equal((await (await fetch('http://127.0.0.1:3194/api/config')).json()).aiLimits.perDay, 5);
+  } finally { for (const c of [closed, open]) { c.kill(); await once(c, 'exit'); } redis.close(); }
+});

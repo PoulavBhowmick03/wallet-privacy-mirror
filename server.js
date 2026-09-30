@@ -6,20 +6,25 @@ import { runAI } from './src/providers.js';
 import { buildReport, recordedModelRun } from './src/report.js';
 import { plannedTransfer } from './src/scenarios.js';
 import { analyze } from './src/analysis.js';
+import { storeConfigured, AI_LIMITS, takeAIRun, cachedResult, cacheResult, hash } from './src/limits.js';
 
 const port = Number(process.env.PORT || 3000);
 const publicDemo = process.env.VERCEL === '1' || process.env.PUBLIC_DEMO === '1';
 // Public address lookups need an explicit switch in addition to a key. Model requests never run publicly.
 const publicLive = publicDemo && process.env.PUBLIC_LIVE === '1';
 const liveEnabled = Boolean(process.env.ETHERSCAN_API_KEY) && (!publicDemo || publicLive);
+// Public model runs need PUBLIC_AI=1, a key, and the shared rate-limit store. Without all three they stay off.
+const publicAI = publicDemo && process.env.PUBLIC_AI === '1' && Boolean(process.env.OPENAI_API_KEY) && storeConfigured;
+const aiEnabled = publicDemo ? publicAI : Boolean(process.env.OPENAI_API_KEY);
 const model = process.env.OPENAI_MODEL || 'gpt-6.1-sol';
 // Best-effort guards for public lookups. Serverless instances do not share memory, so these limits
 // apply per instance; Etherscan's own rate limit still sits behind them. Attempts are counted,
 // not successes, so invalid requests cannot be used to probe past the limit.
 const LOOKUP_LIMIT = { perClient: 12, windowMs: 10 * 60 * 1000, perMinute: 40 }, CACHE_MS = 5 * 60 * 1000;
 const lookups = new Map(), recentLookups = [], lookupCache = new Map();
+const clientOf = req => String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
 function rateLimit(req) {
-  const now = Date.now(), client = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
+  const now = Date.now(), client = clientOf(req);
   while (recentLookups.length && now - recentLookups[0] > 60000) recentLookups.shift();
   if (recentLookups.length >= LOOKUP_LIMIT.perMinute) return 'This demo is handling many lookups. Try again in a minute.';
   const times = (lookups.get(client) || []).filter(t => now - t < LOOKUP_LIMIT.windowMs);
@@ -55,7 +60,7 @@ export async function handler(req, res) {
       const ev = await readFile(new URL('./data/model-evaluation.json', import.meta.url), 'utf8').then(JSON.parse).catch(() => null);
       const evaluation = ev && ev.completed ? { model: ev.model, createdAt: ev.createdAt, cases: ev.cases.length, nearMiss: ev.cases.filter(c => /^(near|late|same|mixed)-/.test(c.id)).length,
         completed: ev.completed, passed: ev.passed, proposed: ev.proposed, accepted: ev.accepted, rejected: ev.rejected, cost: ev.estimatedCost } : null;
-      return json(res, 200, { live: liveEnabled, ai: !publicDemo && Boolean(process.env.OPENAI_API_KEY), publicDemo, model,
+      return json(res, 200, { live: liveEnabled, ai: aiEnabled, aiLimits: publicAI ? AI_LIMITS : null, publicDemo, model,
         modelName: model === 'gpt-6.1-sol' ? 'GPT-6.1 Sol' : model, evaluation });
     }
     if (req.method === 'POST' && pathname === '/api/report') {
@@ -107,8 +112,24 @@ export async function handler(req, res) {
       return run ? json(res, 200, run) : json(res, 404, { error: 'No recorded model run matches this window. Choose the 90-day sample or the recorded data.' });
     }
     if (req.method === 'POST' && pathname === '/api/ai') {
-      if (publicDemo) return json(res, 403, { error: 'Model comparison is unavailable in this public demo. No paid API request was made.' });
-      const input = await body(req);
+      if (publicDemo && !publicAI) return json(res, 403, { error: 'Model comparison is unavailable in this public demo. No paid API request was made.' });
+      const input = await body(req, publicDemo ? 200000 : 4096);
+      if (publicDemo) {
+        if (input.consent !== true) throw new Error('Confirm disclosure to OpenAI before running the model.');
+        if (input.source !== 'live' || !Array.isArray(input.transactions) || input.transactions.length > 200) throw new Error('Live comparisons run on address reports. The sample and recorded data have saved runs.');
+        const report = analyze({ address: input.address, transactions: input.transactions, start: Number(input.start), end: Number(input.end), source: 'live' });
+        const key = hash(`${model}:${report.address}:${report.transactions.map(t => t.id).sort().join(',')}`);
+        let limited;
+        try {
+          const cached = await cachedResult(key);
+          if (cached) return json(res, 200, { ...cached, cached: true });
+          limited = await takeAIRun(clientOf(req));
+        } catch { return json(res, 503, { error: 'Model comparison is unavailable right now. No paid API request was made.' }); }
+        if (limited) return json(res, 429, { error: limited });
+        const result = await runAI(report, process.env.OPENAI_API_KEY, model);
+        await cacheResult(key, result).catch(() => {});
+        return json(res, 200, result);
+      }
       if (input.consent !== true) throw new Error('Confirm disclosure to OpenAI before running the model.');
       if (!process.env.OPENAI_API_KEY) throw new Error('AI analysis needs OPENAI_API_KEY in the server .env file.');
       const entry = reports.get(input.reportId);
