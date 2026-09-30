@@ -1,12 +1,23 @@
 import { ADDRESS, STABLECOINS } from './analysis.js';
 import { PATTERNS, PATTERN_RULES, verifyProposals } from './verification.js';
+// Free Etherscan keys allow 3 requests per second. A lookup makes two at once, so concurrent
+// visitors can exceed it; retry that specific rejection after a short pause.
+export const RETRY_MS = { value: 1100 };
+async function etherscan(url, failure, fetcher, attempts = 4) {
+  for (let attempt = 1; ; attempt++) {
+    const response = await fetcher(url, { signal: AbortSignal.timeout(20000) });
+    if (!response.ok) throw new Error(failure);
+    const data = await response.json();
+    if (!(data.status === '0' && /rate limit/i.test(String(data.result)))) return data;
+    if (attempt >= attempts) throw new Error('Etherscan is busy right now. Try again in a few seconds.');
+    await new Promise(resolve => setTimeout(resolve, RETRY_MS.value * attempt));
+  }
+}
 export async function fetchTransactions(address, key, fetcher = fetch) {
   const url = new URL('https://api.etherscan.io/v2/api');
   url.search = new URLSearchParams({ chainid: '1', module: 'account', action: 'txlist', address,
     startblock: '0', endblock: '99999999', page: '1', offset: '100', sort: 'desc', apikey: key });
-  const response = await fetcher(url, { signal: AbortSignal.timeout(20000) });
-  if (!response.ok) throw new Error('Etherscan could not fetch this history. Try again later.');
-  const data = await response.json();
+  const data = await etherscan(url, 'Etherscan could not fetch this history. Try again later.', fetcher);
   if (data.status === '0' && data.message === 'No transactions found' && Array.isArray(data.result) && !data.result.length) return [];
   if (data.status !== '1' || !Array.isArray(data.result)) throw new Error('Etherscan rejected the request. Check your server API key, plan, or rate limit.');
   if (data.result.length > 100) throw new Error('Etherscan returned more than the requested transaction limit.');
@@ -25,9 +36,7 @@ export async function fetchTokenTransfers(address, key, fetcher = fetch) {
   const url = new URL('https://api.etherscan.io/v2/api');
   url.search = new URLSearchParams({ chainid: '1', module: 'account', action: 'tokentx', address,
     startblock: '0', endblock: '99999999', page: '1', offset: '100', sort: 'desc', apikey: key });
-  const response = await fetcher(url, { signal: AbortSignal.timeout(20000) });
-  if (!response.ok) throw new Error('Etherscan could not fetch token transfers. Try again later.');
-  const data = await response.json();
+  const data = await etherscan(url, 'Etherscan could not fetch token transfers. Try again later.', fetcher);
   if (data.status === '0' && data.message === 'No transactions found' && Array.isArray(data.result) && !data.result.length) return { rows: [], fetched: 0 };
   if (data.status !== '1' || !Array.isArray(data.result)) throw new Error('Etherscan rejected the token request. Check your server API key, plan, or rate limit.');
   if (data.result.length > 100) throw new Error('Etherscan returned more than the requested token transfer limit.');

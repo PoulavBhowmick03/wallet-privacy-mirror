@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { analyze, eth } from '../src/analysis.js';
 import { SAMPLE_ADDRESS as address, sampleTransactions } from '../src/sample.js';
-import { fetchTransactions, fetchTokenTransfers, validateSelections, runAI } from '../src/providers.js';
+import { fetchTransactions, fetchTokenTransfers, validateSelections, runAI, RETRY_MS } from '../src/providers.js';
 const start = Date.parse('2026-07-01T00:00:00Z') / 1000, end = Date.parse('2026-09-30T23:59:59Z') / 1000;
 const report = (transactions = sampleTransactions()) => analyze({ address, transactions, start, end, source: 'sample' });
 test('sample findings cite fixture evidence only, with exact ETH sums', () => {
@@ -45,7 +45,9 @@ test('model selections must reference an allowed interpretation and its matching
   assert.throws(() => validateSelections([{ findingId: i.findingId, interpretationId: i.id }, { findingId: i.findingId, interpretationId: i.id }], r), /outside/);
 });
 test('Etherscan rate limit is an error, not an empty history', async () => {
-  await assert.rejects(fetchTransactions(address, 'test', async () => ({ ok: true, json: async () => ({ status: '0', message: 'NOTOK', result: 'Max rate limit reached' }) })), /rejected/);
+  RETRY_MS.value = 1;
+  await assert.rejects(fetchTransactions(address, 'test', async () => ({ ok: true, json: async () => ({ status: '0', message: 'NOTOK', result: 'Max rate limit reached' }) })), /Etherscan is busy/);
+  RETRY_MS.value = 1100;
 });
 test('Etherscan no-transactions result is accepted without fabricating a finding', async () => {
   assert.deepEqual(await fetchTransactions(address, 'test', async () => ({ ok: true, json: async () => ({ status: '0', message: 'No transactions found', result: [] }) })), []);
@@ -96,4 +98,15 @@ test('token transfers keep only allowlisted stablecoin contracts, not spoofed sy
 test('a fixed series from one counterparty is found among its other transfers', () => {
   const rows = [...sampleTransactions(), { id: 'extra-1', from: `0x${'4'.repeat(40)}`, to: address, wei: '60000000000000000', timestamp: Date.parse('2026-08-20T09:00:00Z') / 1000, failed: false, synthetic: true }];
   assert.ok(report(rows).findings.some(f => f.key === 'recurring:incoming:ETH:1200000000000000000'));
+});
+
+test('Etherscan per-second rate limits are retried, then reported plainly', async () => {
+  RETRY_MS.value = 1;
+  const limited = { ok: true, json: async () => ({ status: '0', message: 'NOTOK', result: 'Max calls per sec rate limit reached (3/sec)' }) };
+  const ok = { ok: true, json: async () => ({ status: '0', message: 'No transactions found', result: [] }) };
+  let calls = 0;
+  assert.deepEqual(await fetchTransactions(address, 'key', async () => (++calls < 3 ? limited : ok)), []);
+  assert.equal(calls, 3);
+  await assert.rejects(fetchTransactions(address, 'key', async () => limited), /Etherscan is busy/);
+  RETRY_MS.value = 1100;
 });
