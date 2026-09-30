@@ -4,7 +4,7 @@
   "buildCommand": "",
   "outputDirectory": "public",
   "functions": {
-    "api/*.js": { "includeFiles": "data/**", "maxDuration": 10 }
+    "api/*.js": { "includeFiles": "data/**", "maxDuration": 60 }
   },
   "headers": [{
     "source": "/(.*)",
