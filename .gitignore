@@ -1,0 +1,13 @@
+.env
+node_modules/
+artifacts/
+test-results/
+playwright-report/
+.DS_Store
+demo/out/
+demo/shots/
+demo/music/
+
+.vercel/
+.env.*
+!.env.example

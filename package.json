@@ -1,0 +1,23 @@
+{
+  "name": "wallet-privacy-mirror",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env server.js",
+    "start": "node --env-file-if-exists=.env server.js",
+    "test": "node --test test/*.test.js",
+    "test:e2e": "playwright test",
+    "evaluate": "node --env-file-if-exists=.env scripts/evaluate.js",
+    "verify:chain": "node scripts/verify-chain.js",
+    "demo:capture": "node demo/capture.mjs",
+    "demo:audio": "node demo/audio.mjs",
+    "demo:render": "node demo/render.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  }
+}

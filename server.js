@@ -1,0 +1,87 @@
+import { createServer } from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+import { analyze, ADDRESS } from './src/analysis.js';
+import { sampleTransactions, SAMPLE_ADDRESS } from './src/sample.js';
+import { fetchTransactions, runAI } from './src/providers.js';
+
+const port = Number(process.env.PORT || 3000);
+const publicDemo = process.env.VERCEL === '1' || process.env.PUBLIC_DEMO === '1';
+const model = process.env.OPENAI_MODEL || 'gpt-6.1-sol';
+const reports = new Map(), inFlight = new Set();
+const TTL = 15 * 60 * 1000;
+const assets = new Map([['/', ['index.html', 'text/html']], ['/app.js', ['app.js', 'text/javascript']], ['/report-view.js', ['report-view.js', 'text/javascript']], ['/style.css', ['style.css', 'text/css']]]);
+function json(res, status, data) { res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(data)); }
+async function body(req) {
+  if (req.body && typeof req.body === 'object') {
+    if (JSON.stringify(req.body).length > 4096) throw new Error('Request too large.');
+    return req.body;
+  }
+  let text = '';
+  for await (const chunk of req) { text += chunk; if (text.length > 4096) throw new Error('Request too large.'); }
+  try { return JSON.parse(text); } catch { throw new Error('Invalid JSON request.'); }
+}
+export async function handler(req, res) {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
+  try {
+    // Bind to loopback, reject alternate hosts and cross-origin API callers.
+    const allowedHosts = new Set([`127.0.0.1:${port}`, `localhost:${port}`]);
+    if (!publicDemo && !allowedHosts.has(req.headers.host)) return json(res, 403, { error: 'This demo only accepts localhost requests.' });
+    const pathname = new URL(req.url, `http://127.0.0.1:${port}`).pathname;
+    if (pathname.startsWith('/api/') && req.headers.origin && !(publicDemo ? req.headers.origin === `https://${req.headers.host}` : [`http://127.0.0.1:${port}`, `http://localhost:${port}`].includes(req.headers.origin))) return json(res, 403, { error: 'Cross-origin request rejected.' });
+    if (req.method === 'GET' && pathname === '/api/config') return json(res, 200, { live: !publicDemo && Boolean(process.env.ETHERSCAN_API_KEY), ai: !publicDemo && Boolean(process.env.OPENAI_API_KEY), publicDemo, model });
+    if (req.method === 'POST' && pathname === '/api/report') {
+      const input = await body(req), started = performance.now();
+      const sample = input.source === 'sample', recorded = input.source === 'recorded';
+      if (!sample && !recorded && input.source !== 'live') throw new Error('Choose sample, recorded, or live data.');
+      if (publicDemo && !sample && !recorded) return json(res, 403, { error: 'Fresh address queries are unavailable in this public demo. Use the sample or recorded Ethereum data.' });
+      if (!sample && !recorded && (!ADDRESS.test(input.address || '') || input.consent !== true)) throw new Error('Enter a valid address and confirm permission to query it.');
+      if (!sample && !recorded && !process.env.ETHERSCAN_API_KEY) throw new Error('Live data needs ETHERSCAN_API_KEY in the server .env file. The sample needs no key.');
+      const snapshot = recorded ? JSON.parse(await readFile(new URL('./data/lido-mainnet-snapshot.json', import.meta.url), 'utf8')) : null;
+      const address = snapshot?.address || (sample ? SAMPLE_ADDRESS : input.address);
+      const windowDays = Number(input.days || 90);
+      if (![30, 60, 90].includes(windowDays)) throw new Error('Choose a 30, 60, or 90 day window.');
+      const end = snapshot?.end || (sample ? Date.parse('2026-09-30T23:59:59Z') / 1000 : Math.floor(Date.now() / 1000));
+      const start = recorded ? snapshot.start : end - windowDays * 86400;
+      const transactions = snapshot?.transactions || (sample ? sampleTransactions() : await fetchTransactions(address, process.env.ETHERSCAN_API_KEY));
+      const report = analyze({ address, transactions, start, end, source: recorded ? 'live' : input.source });
+      if (recorded) {
+        report.source = 'recorded'; report.recordedAt = snapshot.generatedAt; report.provenance = snapshot.provenance;
+        report.originalFetchMs = snapshot.elapsedMs;
+        report.chainVerification = JSON.parse(await readFile(new URL('./data/lido-chain-verification.json', import.meta.url), 'utf8'));
+      }
+      report.elapsedMs = Math.round(performance.now() - started); report.id = randomUUID(); report.generatedAt = new Date().toISOString();
+      for (const [id, entry] of reports) if (Date.now() - entry.created > TTL) reports.delete(id);
+      if (reports.size >= 50) reports.delete(reports.keys().next().value);
+      reports.set(report.id, { report, created: Date.now(), ai: null });
+      const reportId = report.id;
+      setTimeout(() => reports.delete(reportId), TTL).unref();
+      return json(res, 200, report);
+    }
+    if (req.method === 'POST' && pathname === '/api/ai') {
+      if (publicDemo) return json(res, 403, { error: 'Model comparison is unavailable in this public demo. No paid API request was made.' });
+      const input = await body(req);
+      if (input.consent !== true) throw new Error('Confirm disclosure to OpenAI before running the model.');
+      if (!process.env.OPENAI_API_KEY) throw new Error('AI analysis needs OPENAI_API_KEY in the server .env file.');
+      const entry = reports.get(input.reportId);
+      if (!entry || Date.now() - entry.created > TTL) throw new Error('Report expired. Analyze the wallet again.');
+      if (entry.ai) return json(res, 200, entry.ai);
+      if (inFlight.size || inFlight.has(input.reportId)) throw new Error('An AI request is already running. Wait before trying again.');
+      inFlight.add(input.reportId);
+      try { entry.ai = await runAI(entry.report, process.env.OPENAI_API_KEY, model); return json(res, 200, entry.ai); }
+      finally { inFlight.delete(input.reportId); }
+    }
+    if (req.method === 'GET' && assets.has(pathname)) {
+      const [file, type] = assets.get(pathname);
+      res.writeHead(200, { 'Content-Type': `${type}; charset=utf-8`, 'Cache-Control': 'no-cache' });
+      return res.end(await readFile(fileURLToPath(new URL(`./public/${file}`, import.meta.url))));
+    }
+    json(res, 404, { error: 'Not found.' });
+  } catch (error) { json(res, 400, { error: error.message || 'Unable to complete the request.' }); }
+}
+if (process.argv[1] && fileURLToPath(import.meta.url) === fileURLToPath(new URL(`file://${process.argv[1]}`))) {
+  createServer(handler).listen(port, '127.0.0.1', () => console.log(`Wallet Privacy Mirror: http://localhost:${port}`));
+}

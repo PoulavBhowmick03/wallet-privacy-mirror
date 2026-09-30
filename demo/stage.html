@@ -1,0 +1,244 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=block" rel="stylesheet">
+<style>
+  :root { --accent: #7b5cf0; --ink: #0d0d0f; --paper: #f6f6f3; --red: #ff5b37; --mono: "IBM Plex Mono", ui-monospace, monospace; --display: "Inter Tight", Helvetica, Arial, sans-serif; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #000; }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+  .layer { position: absolute; inset: 0; }
+  #light { background: var(--paper); }
+  #grid { background-image: linear-gradient(rgb(0 0 0 / 4.5%) 1px, transparent 1px), linear-gradient(90deg, rgb(0 0 0 / 4.5%) 1px, transparent 1px); background-size: 80px 80px; background-position: -1px -1px; }
+  #dark { background: #050505; }
+  .hdr { position: absolute; top: 34px; font: 500 13px var(--mono); letter-spacing: .28em; color: #8d8d92; white-space: nowrap; }
+  #hdr-left { left: 60px; } #hdr-right { right: 60px; }
+  .headline { position: absolute; left: 0; right: 0; text-align: center; font-family: var(--display); font-weight: 700; white-space: nowrap; will-change: opacity, transform; }
+  .headline.statement { font-size: 124px; letter-spacing: -0.045em; line-height: 1; }
+  .headline.site { top: 62px; font-size: 76px; letter-spacing: -0.04em; line-height: 1.05; }
+  .headline span { display: inline-block; white-space: pre; }
+  .tag { position: absolute; left: 50%; top: 166px; transform: translateX(-50%); padding: 6px 14px; font: 500 15px var(--mono); letter-spacing: .2em; color: var(--accent); border: 2px dashed var(--accent); white-space: nowrap; background: var(--paper); }
+  .tag.hypo { color: #9a6b00; border-color: #c89a2a; }
+  #chips { position: absolute; top: 470px; left: 0; right: 0; display: flex; justify-content: center; gap: 22px; }
+  .chip { width: 232px; height: 96px; border: 2px solid var(--red); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+  .chip b { font: 500 12px var(--mono); letter-spacing: .25em; color: #9a9aa0; }
+  .chip i { font: 500 19px var(--mono); font-style: normal; color: var(--red); white-space: nowrap; }
+  #chip-caption { position: absolute; top: 640px; left: 0; right: 0; text-align: center; font: 500 14px var(--mono); letter-spacing: .28em; color: #77777d; }
+  #win { position: absolute; border-radius: 12px; overflow: hidden; background: #fff; box-shadow: 0 1px 0 rgb(0 0 0 / 6%), 0 30px 80px -20px rgb(20 20 40 / 35%), 0 0 0 1px rgb(0 0 0 / 10%); will-change: transform, opacity; }
+  #bar { height: 40px; background: #ececef; border-bottom: 1px solid #dcdce0; display: flex; align-items: center; padding: 0 16px; gap: 8px; }
+  #bar i { width: 12px; height: 12px; border-radius: 50%; background: #d4d4d8; }
+  #url { margin-left: 18px; flex: 0 0 420px; height: 26px; border-radius: 6px; background: #fff; border: 1px solid #dcdce0; font: 13px var(--mono); color: #55555c; display: flex; align-items: center; padding: 0 10px; }
+  #view { position: relative; overflow: hidden; background: #f7f7f8; }
+  #cam { position: absolute; left: 0; top: 0; width: 1440px; transform-origin: 0 0; will-change: transform; }
+  #cam img { position: absolute; left: 0; width: 1440px; display: block; }
+  #overlay { position: absolute; inset: 0; pointer-events: none; }
+  .co { position: absolute; }
+  .co .rect { position: absolute; inset: 0; border: 2.5px dashed var(--accent); border-radius: 4px; }
+  .co.ink .rect { border: 2.5px solid var(--ink); }
+  .co .lab { position: absolute; padding: 5px 11px; font: 500 14px var(--mono); letter-spacing: .16em; white-space: nowrap; color: var(--accent); background: #fbfaff; border: 2px dashed var(--accent); }
+  .co.ink .lab { color: #fff; background: var(--ink); border: 2px solid var(--ink); }
+  #cursor { position: absolute; left: 0; top: 0; width: 30px; height: 30px; will-change: transform; filter: drop-shadow(0 2px 3px rgb(0 0 0 / 30%)); }
+  #ripple { position: absolute; left: 0; top: 0; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; border: 3px solid var(--accent); }
+  #end { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; }
+  #end .etag { padding: 6px 14px; font: 500 14px var(--mono); letter-spacing: .28em; color: var(--accent); border: 2px dashed var(--accent); }
+  #end h1 { margin: 0; font: 700 112px var(--display); letter-spacing: -0.045em; color: #f2f2f2; }
+  #end p { margin: 0; font: 500 16px var(--mono); letter-spacing: .28em; color: #8d8d92; }
+  #fade { background: #000; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="dark" class="layer"></div>
+  <div id="light" class="layer"><div id="grid" class="layer"></div></div>
+  <div id="hdr-left" class="hdr">WALLET PRIVACY MIRROR · A PRIVACY STUDY DEMO</div>
+  <div id="hdr-right" class="hdr"></div>
+  <div id="heads"></div>
+  <div id="chips"></div><div id="chip-caption"></div>
+  <div id="win">
+    <div id="bar"><i></i><i></i><i></i><div id="url">localhost:3000</div></div>
+    <div id="view"><div id="cam"></div><div id="overlay"></div>
+      <div id="ripple"></div>
+      <svg id="cursor" viewBox="0 0 24 24"><path d="M4 2.5v17.2l4.7-4.4 3 6.8 3.1-1.4-3-6.7 6.4-.3z" fill="#111" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>
+    </div>
+  </div>
+  <div id="end"><span class="etag">PRIVACY STUDY DEMO</span><h1>Wallet Privacy Mirror</h1><p>EVIDENCE FOR EVERY FINDING · LOCAL · READ-ONLY</p></div>
+  <div id="fade" class="layer"></div>
+</div>
+<script type="module">
+import * as T from './timeline.js';
+const $ = id => document.getElementById(id);
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, p) => a + (b - a) * p;
+const ease = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+const easeOut = p => 1 - Math.pow(1 - p, 3);
+const ramp = (t, t0, d) => clamp((t - t0) / d);
+const within = (t, a, b) => t >= a && t < b;
+const S = await (await fetch('./shots/states.json')).json();
+
+// ---------- build DOM ----------
+const heads = T.headlines.map(h => {
+  const el = document.createElement('div'); el.className = `headline ${h.mode}`;
+  el.innerHTML = [...h.text].map(c => `<span>${c}</span>`).join('');
+  if (h.mode === 'statement') el.style.top = `${(h.y ?? 470) - 62}px`;
+  $('heads').append(el);
+  let tag = null;
+  if (h.tag) { tag = document.createElement('div'); tag.className = `tag ${h.tagKind || ''}`; tag.textContent = h.tag; $('heads').append(tag); }
+  return { h, el, spans: [...el.children], tag };
+});
+const chipEls = T.chips.items.map(([k, v]) => { const d = document.createElement('div'); d.className = 'chip'; d.innerHTML = `<b>${k}</b><i>${v}</i>`; $('chips').append(d); return d; });
+$('chip-caption').textContent = T.chips.caption.text;
+
+const win = $('win'); Object.assign(win.style, { left: `${T.WIN.x}px`, top: `${T.WIN.y}px`, width: `${T.WIN.w}px`, height: `${T.WIN.h}px` });
+Object.assign($('view').style, { width: `${T.VIEW.w}px`, height: `${T.VIEW.h}px` });
+const imgs = {};
+for (const [name, st] of Object.entries(S.states)) {
+  const img = new Image(); img.src = `./shots/${name}.png`; img.style.top = `${st.y}px`; img.style.opacity = 0;
+  $('cam').append(img); imgs[name] = img;
+}
+await Promise.all(Object.values(imgs).map(i => i.decode()));
+await document.fonts.ready;
+for (const { h, el } of heads) {
+  if (h.mode !== 'statement') continue;
+  el.style.display = 'inline-block'; el.style.left = '50%'; el.style.right = 'auto'; el.style.transform = 'translateX(-50%)';
+  const wpx = el.scrollWidth; el.style.cssText = el.style.cssText.replace(/display[^;]*;|left[^;]*;|right[^;]*;|transform[^;]*;/g, '');
+  if (wpx > 1720) el.style.fontSize = `${Math.floor(124 * 1720 / wpx)}px`;
+}
+const callEls = T.callouts.map(([, , , , label, , kind]) => {
+  const d = document.createElement('div'); d.className = `co ${kind}`; d.innerHTML = `<div class="rect"></div><div class="lab"></div>`;
+  $('overlay').append(d); return { d, rect: d.firstChild, lab: d.lastChild, label };
+});
+
+// ---------- camera ----------
+const box = (state, name) => { const b = S.states[state].boxes[name]; if (!b) throw new Error(`missing box ${state}.${name}`); return b; };
+function union(bs) { const x = Math.min(...bs.map(b => b.x)), y = Math.min(...bs.map(b => b.y)); return { x, y, w: Math.max(...bs.map(b => b.x + b.w)) - x, h: Math.max(...bs.map(b => b.y + b.h)) - y }; }
+function fit(target) {
+  const r = target.rect ?? union(target.boxes.map(n => box(target.state, n)));
+  const pad = target.pad ?? 0;
+  const s = clamp(Math.min(T.VIEW.w / (r.w + 2 * pad), T.VIEW.h / (r.h + 2 * pad)), T.VIEW.w / T.PAGE_W, target.max ?? 2.4);
+  return { cx: r.x + r.w / 2, cy: r.y + r.h / 2, s };
+}
+const START = fit({ rect: { x: 0, y: 0, w: 1440, h: T.VIEW.h * T.PAGE_W / T.VIEW.w } });
+const moves = T.camera.map(([t0, t1, target]) => ({ t0, t1, to: fit(target) }));
+function cameraAt(t) {
+  let cam = START, lastEnd = 0;
+  for (const m of moves) {
+    if (t < m.t0) break;
+    const p = ease(ramp(t, m.t0, m.t1 - m.t0));
+    cam = { cx: lerp(cam.cx, m.to.cx, p), cy: lerp(cam.cy, m.to.cy, p), s: Math.exp(lerp(Math.log(cam.s), Math.log(m.to.s), p)) };
+    lastEnd = m.t1;
+  }
+  const s = cam.s * (1 + Math.min(0.025, Math.max(0, t - lastEnd) * 0.006)); // slow push-in while holding
+  let tx = T.VIEW.w / 2 - cam.cx * s, ty = T.VIEW.h / 2 - cam.cy * s;
+  tx = clamp(tx, T.VIEW.w - T.PAGE_W * s, 0); ty = clamp(ty, T.VIEW.h - 1900 * s, 0);
+  return { s, tx, ty };
+}
+const toView = (cam, x, y) => ({ x: x * cam.s + cam.tx, y: y * cam.s + cam.ty });
+
+// ---------- state crossfades ----------
+function stack(name) { return T.BASE[name] ? [T.BASE[name], name] : [name]; }
+function stateLayers(t) {
+  let i = 0; while (i + 1 < T.states.length && T.states[i + 1][0] <= t) i++;
+  const cur = T.states[i][1], p = i ? ramp(t, T.states[i][0], T.FADE) : 1, prev = i ? T.states[i - 1][1] : null;
+  const out = new Map();
+  if (p < 1 && prev) stack(prev).forEach((n, k) => out.set(n, { o: 1, z: 1 + k }));
+  stack(cur).forEach((n, k) => { const had = out.get(n); out.set(n, { o: had ? 1 : p, z: 10 + k }); });
+  return out;
+}
+
+// ---------- cursor ----------
+function pagePoint([state, name, fx, fy]) { const b = box(state, name); return { x: b.x + b.w * fx, y: b.y + b.h * fy }; }
+function cursorAt(t) {
+  const seg = T.cursor.find(c => t >= c.show - 0.2 && t < c.hide + 0.25);
+  if (!seg) return null;
+  const pts = seg.points.map(([pt, at]) => [pt, pagePoint(at)]);
+  let pos = pts[0][1];
+  for (let k = 1; k < pts.length; k++) {
+    const [pt0, a] = pts[k - 1], [pt1, b] = pts[k];
+    const dur = Math.max(0.3, (pt1 - pt0) * 0.8), p = ease(ramp(t, pt1 - dur, dur));
+    if (t >= pt1 - dur) pos = { x: lerp(a.x, b.x, p), y: lerp(a.y, b.y, p) };
+  }
+  const o = Math.min(ramp(t, seg.show - 0.2, 0.2), 1 - ramp(t, seg.hide, 0.25));
+  const click = seg.clicks.map(c => t - c).find(d => d >= 0 && d < 0.45);
+  return { ...pos, o, click };
+}
+
+// ---------- render ----------
+window.render = function render(t) {
+  const dark = T.DARK.some(([a, b]) => within(t, a, b));
+  $('dark').style.opacity = dark ? 1 : 0;
+  $('light').style.opacity = dark ? 0 : 1;
+  const hdrColor = dark ? '#6e6e74' : '#8d8d92';
+  $('hdr-left').style.color = $('hdr-right').style.color = hdrColor;
+  $('hdr-right').textContent = [...T.headerRight].reverse().find(([a]) => t >= a)[1];
+  const endOn = t >= T.endCard.t0;
+  $('hdr-left').style.opacity = $('hdr-right').style.opacity = endOn ? 0 : 1;
+
+  for (const { h, el, spans, tag } of heads) {
+    const on = t >= h.t0 - 0.01 && t < h.t1;
+    el.style.display = on ? '' : 'none'; if (tag) tag.style.display = on ? '' : 'none';
+    if (!on) continue;
+    el.style.color = h.mode === 'statement' ? '#f2f2f2' : '#0d0d0f';
+    const step = T.CHAR_STEP[h.mode];
+    spans.forEach((s, i) => { const p = ramp(t, h.t0 + i * step, 0.09); s.style.opacity = p; s.style.transform = `translateY(${(1 - easeOut(p)) * 10}px)`; });
+    const out = ramp(t, h.t1 - T.OUT_FADE, T.OUT_FADE);
+    el.style.opacity = 1 - out; el.style.transform = `translateY(${-14 * out}px)`;
+    if (tag) { const p = ramp(t, h.t0 + 0.3, 0.2); tag.style.opacity = p * (1 - out); tag.style.transform = `translateX(-50%) translateY(${(1 - easeOut(p)) * 8}px)`; }
+  }
+
+  const chipOn = within(t, T.chips.t0, T.chips.t1);
+  const chipOut = ramp(t, T.chips.t1 - T.OUT_FADE, T.OUT_FADE);
+  $('chips').style.display = $('chip-caption').style.display = chipOn ? '' : 'none';
+  chipEls.forEach((c, i) => { const p = ramp(t, T.chips.t0 + i * T.chips.step, 0.2); c.style.opacity = p * (1 - chipOut); c.style.transform = `translateY(${(1 - easeOut(p)) * 18}px)`; });
+  $('chip-caption').style.opacity = ramp(t, T.chips.caption.t0, 0.25) * (1 - chipOut);
+
+  const winIn = easeOut(ramp(t, T.WINDOW_IN, 0.5)), winOut = ease(ramp(t, T.WINDOW_OUT, 0.3));
+  const winVis = t >= T.WINDOW_IN && t < T.WINDOW_OUT + 0.3;
+  win.style.display = winVis ? '' : 'none';
+  if (winVis) {
+    win.style.opacity = winIn * (1 - winOut);
+    win.style.transform = `translateY(${(1 - winIn) * 90}px) scale(${1 - 0.04 * winOut})`;
+    const cam = cameraAt(t);
+    $('cam').style.transform = `translate(${cam.tx}px, ${cam.ty}px) scale(${cam.s})`;
+    const layers = stateLayers(t);
+    for (const [name, img] of Object.entries(imgs)) { const l = layers.get(name); img.style.opacity = l ? l.o : 0; img.style.zIndex = l ? l.z : 0; }
+
+    T.callouts.forEach(([t0, t1, state, name, , side], i) => {
+      const { d, rect, lab, label } = callEls[i];
+      const on = within(t, t0, t1); d.style.display = on ? '' : 'none'; if (!on) return;
+      const b = box(state, name), a = toView(cam, b.x, b.y), z = toView(cam, b.x + b.w, b.y + b.h), g = 6;
+      Object.assign(d.style, { left: `${a.x - g}px`, top: `${a.y - g}px`, width: `${z.x - a.x + 2 * g}px`, height: `${z.y - a.y + 2 * g}px` });
+      const pin = easeOut(ramp(t, t0, 0.2)), pout = ramp(t, t1 - 0.15, 0.15);
+      d.style.opacity = pin * (1 - pout);
+      rect.style.transform = `scale(${1.04 - 0.04 * pin})`;
+      const n = Math.round(label.length * ramp(t, t0 + 0.08, Math.max(0.25, label.length * 0.012)));
+      lab.textContent = label.slice(0, n) || '​';
+      lab.style.visibility = n ? 'visible' : 'hidden';
+      // Place the label outside the box, clamped to the viewport.
+      const lw = label.length * 10.9 + 26, lh = 32, W = z.x - a.x + 2 * g, H = z.y - a.y + 2 * g;
+      let lx = 0, ly = side === 'top' ? -lh - 10 : side === 'top2' ? -2 * lh - 20 : H + 10;
+      const absX = a.x - g; lx = clamp(lx, -absX + 8, T.VIEW.w - absX - lw - 8);
+      const absY = a.y - g + ly; if (absY < 8) ly = H + 10; if (a.y - g + ly + lh > T.VIEW.h - 8) ly = -lh - 10;
+      Object.assign(lab.style, { left: `${lx}px`, top: `${ly}px` });
+    });
+
+    const c = cursorAt(t);
+    $('cursor').style.display = c ? '' : 'none'; $('ripple').style.display = c && c.click != null ? '' : 'none';
+    if (c) {
+      const v = toView(cam, c.x, c.y);
+      const press = c.click != null && c.click < 0.12 ? 0.85 : 1;
+      $('cursor').style.transform = `translate(${v.x - 6}px, ${v.y - 3}px) scale(${press})`; $('cursor').style.opacity = c.o;
+      if (c.click != null) { const p = c.click / 0.45; $('ripple').style.transform = `translate(${v.x}px, ${v.y}px) scale(${0.3 + p})`; $('ripple').style.opacity = 1 - p; }
+    }
+  }
+
+  const eIn = ramp(t, T.endCard.t0, 0.35);
+  $('end').style.display = endOn ? '' : 'none';
+  $('end').style.opacity = easeOut(eIn); $('end').style.transform = `translateY(${(1 - easeOut(eIn)) * 12}px)`;
+  $('fade').style.opacity = Math.max(1 - ramp(t, 0, 0.12), ramp(t, T.DURATION - 0.5, 0.5));
+};
+window.ready = true;
+</script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Shows what public ETH transfer history reveals about an Ethereum address, with the transactions behind each finding.">
+  <meta name="color-scheme" content="light dark">
+  <title>Wallet Privacy Mirror</title><link rel="stylesheet" href="/style.css"><script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header class="appbar">
+    <div class="appbar-inner">
+      <h1 class="brand"><a href="/">Wallet Privacy Mirror</a></h1>
+      <span class="appbar-note">Ethereum mainnet | ETH transfers | read-only</span>
+      <nav class="section-nav" aria-label="Report sections">
+        <a href="#findings-section">Findings</a>
+        <a href="#map-section">Counterparties</a>
+        <a href="#activity-section">Activity</a>
+        <a href="#ai-section">Model comparison</a>
+        <button id="method-nav" type="button">Method</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="report">
+    <section class="query-panel" aria-label="Analysis controls">
+      <form id="wallet-form">
+        <div class="field">
+          <span class="field-label" id="source-label">Source</span>
+          <div class="source-toggle" role="group" aria-labelledby="source-label">
+            <button id="sample-mode" type="button" class="selected">Sample</button>
+            <button id="recorded-mode" type="button">Recorded (Lido)</button>
+            <button id="live-mode" type="button">Address</button>
+          </div>
+        </div>
+        <div class="field grow">
+          <label class="field-label" for="address">Address</label>
+          <div class="address-wrap">
+            <input id="address" placeholder="0x..." spellcheck="false" autocomplete="off" readonly>
+            <span id="sample-tag">synthetic</span>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="days">Window</label>
+          <select id="days"><option value="90">Last 90 days</option><option value="60">Last 60 days</option><option value="30">Last 30 days</option></select>
+        </div>
+        <button class="primary" id="analyze" type="submit">Analyze</button>
+      </form>
+      <label id="live-consent" class="consent hidden"><input type="checkbox" id="live-check"> <span>I own this address, have permission, or am inspecting a publicly documented organization address. Query its public history through Etherscan.</span></label>
+      <p class="query-note" id="query-note"></p>
+    </section>
+
+    <p id="error" class="error hidden" role="alert"></p>
+    <div id="loading" class="hidden loading" role="status">Loading transactions...</div>
+
+    <div id="results" class="hidden">
+      <section class="report-head" aria-label="Report summary">
+        <div class="report-heading">
+          <div class="report-title-row"><h2 id="report-title"></h2><span class="data-badge" id="data-badge"></span></div>
+          <button class="button" id="export" type="button">Export JSON</button>
+        </div>
+        <div class="report-address"><span id="report-address"></span><button id="copy-address" type="button" class="button small" aria-label="Copy report address">Copy</button></div>
+        <div class="report-meta"><span id="report-range"></span><span id="runtime"></span></div>
+        <div id="provenance" class="notice info hidden"></div>
+        <div id="cap-warning" class="notice hidden"></div>
+      </section>
+
+      <section class="stats" aria-label="Report statistics" id="stats"></section>
+
+      <section class="overview" aria-label="Summary">
+        <div class="overview-main">
+          <h3 id="overview-title"></h3>
+          <p id="overview-body"></p>
+          <button id="overview-evidence" type="button" class="link-button">View these transfers</button>
+        </div>
+        <div class="overview-boundary">
+          <h4>Not determined from this data</h4>
+          <p>Identity, relationship between the parties, payment purpose.</p>
+        </div>
+      </section>
+
+      <div class="analysis-layout">
+        <section class="panel findings-panel" id="findings-section" aria-labelledby="findings-heading">
+          <div class="panel-head"><h3 id="findings-heading">Findings</h3></div>
+          <div class="tabs" role="tablist" aria-label="Finding status">
+            <button role="tab" class="active" data-filter="observed">Observed <span id="observed-count"></span></button>
+            <button role="tab" data-filter="hypothesis">Hypotheses <span id="hypothesis-count"></span></button>
+            <button role="tab" data-filter="unknown">Unknown <span id="unknown-count"></span></button>
+          </div>
+          <div id="findings"></div>
+        </section>
+
+        <section class="panel graph-panel" id="map-section" aria-labelledby="map-heading">
+          <div class="panel-head"><h3 id="map-heading">Counterparties</h3><span id="graph-count" class="muted"></span></div>
+          <div id="graph"></div>
+          <div id="graph-detail">Select an address to list its transfers.</div>
+        </section>
+      </div>
+
+      <section class="panel timeline-panel" id="activity-section" aria-labelledby="activity-heading">
+        <div class="panel-head">
+          <div><h3 id="activity-heading">Activity</h3><p id="timeline-range" class="muted"></p></div>
+          <div class="timeline-legend"><span><i class="incoming-key"></i>Received</span><span><i class="outgoing-key"></i>Sent</span></div>
+        </div>
+        <div id="timeline" class="timeline"></div>
+        <p class="hint">Transfer counts per UTC period, fetched records only. Click a bar to list its transfers.</p>
+      </section>
+
+      <section class="panel ai-panel" id="ai-section" aria-labelledby="ai-heading">
+        <div class="ai-row">
+          <div class="ai-copy">
+            <h3 id="ai-heading">Model comparison <span class="muted">(optional)</span></h3>
+            <p>Sends the analyzed transactions to OpenAI and asks a model to propose additional patterns. A proposal is shown only if it passes the same checks against the cited transfers.</p>
+          </div>
+          <button id="ai-open" type="button" class="button">Compare with model</button>
+        </div>
+        <div id="ai-result" class="hidden"></div>
+      </section>
+
+      <section class="boundaries" id="boundaries" aria-labelledby="limits-heading">
+        <h3 id="limits-heading">Limitations</h3>
+        <ul class="boundary-list">
+          <li>An address is not an identity. This report does not establish names, employers, or locations.</li>
+          <li>Regular transfers can have many explanations. A pattern does not establish a payment's purpose.</li>
+          <li>Only successful, normal ETH transfers are included. Tokens, internal calls, fees, and other chains are excluded.</li>
+        </ul>
+        <details id="method-details"><summary>Method and data handling</summary><div id="method-content"></div></details>
+      </section>
+    </div>
+
+    <footer id="data-handling">Reports are held in server memory for up to 15 minutes. No database, analytics, or wallet connection.</footer>
+  </main>
+
+  <dialog id="evidence-dialog" aria-labelledby="evidence-title">
+    <div class="dialog-header"><h2 id="evidence-title"></h2><button class="close" id="evidence-close" type="button" aria-label="Close evidence">x</button></div>
+    <p id="evidence-method"></p>
+    <div class="evidence-controls"><input id="evidence-search" type="search" aria-label="Search cited transactions" placeholder="Filter by hash, address, or date"><select id="evidence-sort" aria-label="Evidence order"><option value="oldest">Oldest first</option><option value="newest">Newest first</option></select><span id="evidence-count" role="status"></span></div>
+    <div class="evidence-scroll"><table><thead><tr><th>Transaction</th><th>Date (UTC)</th><th>Direction</th><th>Counterparty</th><th>Value (ETH)</th></tr></thead><tbody id="evidence-rows"></tbody></table><p id="evidence-empty" class="hidden empty">No cited transactions match this filter.</p></div>
+    <p class="dialog-note" id="evidence-note"></p>
+  </dialog>
+  <div id="toast" class="toast hidden" role="status"></div>
+  <dialog id="ai-dialog" aria-labelledby="ai-dialog-title">
+    <div class="dialog-header"><h2 id="ai-dialog-title">Send data to OpenAI?</h2><button class="close" id="ai-close" type="button" aria-label="Close AI comparison">x</button></div>
+    <p>This sends the analyzed transaction addresses, amounts, timestamps, evidence IDs, and recurring-transfer candidates to OpenAI. Hosted analysis creates another disclosure.</p>
+    <p>The model can select existing hypotheses and propose amount or timing patterns. Code checks each proposal against the cited transfers. It cannot establish identity or payment purpose. This request can incur an API charge.</p>
+    <p id="ai-config-note" class="notice"></p>
+    <label class="consent"><input type="checkbox" id="ai-check"> <span>I consent to this disclosure and the API request.</span></label>
+    <p id="ai-error" class="error hidden" role="alert"></p>
+    <div class="dialog-actions"><button class="primary" id="ai-run" type="button">Run comparison</button></div>
+  </dialog>
+</body>
+</html>

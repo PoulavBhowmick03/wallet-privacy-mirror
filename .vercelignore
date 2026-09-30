@@ -1,0 +1,10 @@
+.env
+.env.*
+.git
+node_modules
+artifacts
+test-results
+playwright-report
+demo
+e2e
+test
