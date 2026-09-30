@@ -5,13 +5,13 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=block" rel="stylesheet">
 <style>
-  :root { --accent: #7b5cf0; --ink: #0d0d0f; --paper: #f6f6f3; --red: #ff5b37; --mono: "IBM Plex Mono", ui-monospace, monospace; --display: "Inter Tight", Helvetica, Arial, sans-serif; }
+  :root { --accent: #9d86ff; --ink: #f2f2f2; --paper: #0c0c0e; --red: #ff5b37; --mono: "IBM Plex Mono", ui-monospace, monospace; --display: "Inter Tight", Helvetica, Arial, sans-serif; }
   * { box-sizing: border-box; }
   html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #000; }
   #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
   .layer { position: absolute; inset: 0; }
   #light { background: var(--paper); }
-  #grid { background-image: linear-gradient(rgb(0 0 0 / 4.5%) 1px, transparent 1px), linear-gradient(90deg, rgb(0 0 0 / 4.5%) 1px, transparent 1px); background-size: 80px 80px; background-position: -1px -1px; }
+  #grid { background-image: linear-gradient(rgb(255 255 255 / 4%) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 4%) 1px, transparent 1px); background-size: 80px 80px; background-position: -1px -1px; }
   #dark { background: #050505; }
   .hdr { position: absolute; top: 34px; font: 500 13px var(--mono); letter-spacing: .28em; color: #8d8d92; white-space: nowrap; }
   #hdr-left { left: 60px; } #hdr-right { right: 60px; }
@@ -20,25 +20,25 @@
   .headline.site { top: 62px; font-size: 76px; letter-spacing: -0.04em; line-height: 1.05; }
   .headline span { display: inline-block; white-space: pre; }
   .tag { position: absolute; left: 50%; top: 166px; transform: translateX(-50%); padding: 6px 14px; font: 500 15px var(--mono); letter-spacing: .2em; color: var(--accent); border: 2px dashed var(--accent); white-space: nowrap; background: var(--paper); }
-  .tag.hypo { color: #9a6b00; border-color: #c89a2a; }
+  .tag.hypo { color: #e2b347; border-color: #c89a2a; }
   #chips { position: absolute; top: 470px; left: 0; right: 0; display: flex; justify-content: center; gap: 22px; }
   .chip { width: 232px; height: 96px; border: 2px solid var(--red); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
   .chip b { font: 500 12px var(--mono); letter-spacing: .25em; color: #9a9aa0; }
   .chip i { font: 500 19px var(--mono); font-style: normal; color: var(--red); white-space: nowrap; }
   #chip-caption { position: absolute; top: 640px; left: 0; right: 0; text-align: center; font: 500 14px var(--mono); letter-spacing: .28em; color: #77777d; }
-  #win { position: absolute; border-radius: 12px; overflow: hidden; background: #fff; box-shadow: 0 1px 0 rgb(0 0 0 / 6%), 0 30px 80px -20px rgb(20 20 40 / 35%), 0 0 0 1px rgb(0 0 0 / 10%); will-change: transform, opacity; }
-  #bar { height: 40px; background: #ececef; border-bottom: 1px solid #dcdce0; display: flex; align-items: center; padding: 0 16px; gap: 8px; }
-  #bar i { width: 12px; height: 12px; border-radius: 50%; background: #d4d4d8; }
-  #url { margin-left: 18px; flex: 0 0 420px; height: 26px; border-radius: 6px; background: #fff; border: 1px solid #dcdce0; font: 13px var(--mono); color: #55555c; display: flex; align-items: center; padding: 0 10px; }
-  #view { position: relative; overflow: hidden; background: #f7f7f8; }
+  #win { position: absolute; border-radius: 12px; overflow: hidden; background: #111113; box-shadow: 0 40px 100px -20px rgb(0 0 0 / 80%), 0 0 0 1px rgb(255 255 255 / 9%), 0 0 80px -10px rgb(157 134 255 / 14%); will-change: transform, opacity; }
+  #bar { height: 40px; background: #1c1c1f; border-bottom: 1px solid #2c2c31; display: flex; align-items: center; padding: 0 16px; gap: 8px; }
+  #bar i { width: 12px; height: 12px; border-radius: 50%; background: #3a3a40; }
+  #url { margin-left: 18px; flex: 0 0 420px; height: 26px; border-radius: 6px; background: #111113; border: 1px solid #2c2c31; font: 13px var(--mono); color: #9696a0; display: flex; align-items: center; padding: 0 10px; }
+  #view { position: relative; overflow: hidden; background: #111113; }
   #cam { position: absolute; left: 0; top: 0; width: 1440px; transform-origin: 0 0; will-change: transform; }
   #cam img { position: absolute; left: 0; width: 1440px; display: block; }
   #overlay { position: absolute; inset: 0; pointer-events: none; }
   .co { position: absolute; }
   .co .rect { position: absolute; inset: 0; border: 2.5px dashed var(--accent); border-radius: 4px; }
   .co.ink .rect { border: 2.5px solid var(--ink); }
-  .co .lab { position: absolute; padding: 5px 11px; font: 500 14px var(--mono); letter-spacing: .16em; white-space: nowrap; color: var(--accent); background: #fbfaff; border: 2px dashed var(--accent); }
-  .co.ink .lab { color: #fff; background: var(--ink); border: 2px solid var(--ink); }
+  .co .lab { position: absolute; padding: 5px 11px; font: 500 14px var(--mono); letter-spacing: .16em; white-space: nowrap; color: var(--accent); background: #17131f; border: 2px dashed var(--accent); }
+  .co.ink .lab { color: #0d0d0f; background: var(--ink); border: 2px solid var(--ink); }
   #cursor { position: absolute; left: 0; top: 0; width: 30px; height: 30px; will-change: transform; filter: drop-shadow(0 2px 3px rgb(0 0 0 / 30%)); }
   #ripple { position: absolute; left: 0; top: 0; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; border: 3px solid var(--accent); }
   #end { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; }
@@ -60,7 +60,7 @@
     <div id="bar"><i></i><i></i><i></i><div id="url">localhost:3000</div></div>
     <div id="view"><div id="cam"></div><div id="overlay"></div>
       <div id="ripple"></div>
-      <svg id="cursor" viewBox="0 0 24 24"><path d="M4 2.5v17.2l4.7-4.4 3 6.8 3.1-1.4-3-6.7 6.4-.3z" fill="#111" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>
+      <svg id="cursor" viewBox="0 0 24 24"><path d="M4 2.5v17.2l4.7-4.4 3 6.8 3.1-1.4-3-6.7 6.4-.3z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/></svg>
     </div>
   </div>
   <div id="end"><span class="etag">PRIVACY STUDY DEMO</span><h1>Wallet Privacy Mirror</h1><p>EVIDENCE FOR EVERY FINDING · LOCAL · READ-ONLY</p></div>
@@ -180,9 +180,9 @@ window.render = function render(t) {
     const on = t >= h.t0 - 0.01 && t < h.t1;
     el.style.display = on ? '' : 'none'; if (tag) tag.style.display = on ? '' : 'none';
     if (!on) continue;
-    el.style.color = h.mode === 'statement' ? '#f2f2f2' : '#0d0d0f';
+    el.style.color = '#f2f2f2';
     const step = T.CHAR_STEP[h.mode];
-    spans.forEach((s, i) => { const p = ramp(t, h.t0 + i * step, 0.09); s.style.opacity = p; s.style.transform = `translateY(${(1 - easeOut(p)) * 10}px)`; });
+    spans.forEach((s, i) => { const p = ramp(t, h.t0 + i * step, 0.14); s.style.opacity = p; s.style.transform = `translateY(${(1 - easeOut(p)) * 10}px)`; });
     const out = ramp(t, h.t1 - T.OUT_FADE, T.OUT_FADE);
     el.style.opacity = 1 - out; el.style.transform = `translateY(${-14 * out}px)`;
     if (tag) { const p = ramp(t, h.t0 + 0.3, 0.2); tag.style.opacity = p * (1 - out); tag.style.transform = `translateX(-50%) translateY(${(1 - easeOut(p)) * 8}px)`; }
@@ -194,7 +194,7 @@ window.render = function render(t) {
   chipEls.forEach((c, i) => { const p = ramp(t, T.chips.t0 + i * T.chips.step, 0.2); c.style.opacity = p * (1 - chipOut); c.style.transform = `translateY(${(1 - easeOut(p)) * 18}px)`; });
   $('chip-caption').style.opacity = ramp(t, T.chips.caption.t0, 0.25) * (1 - chipOut);
 
-  const winIn = easeOut(ramp(t, T.WINDOW_IN, 0.5)), winOut = ease(ramp(t, T.WINDOW_OUT, 0.3));
+  const winIn = easeOut(ramp(t, T.WINDOW_IN, 0.8)), winOut = ease(ramp(t, T.WINDOW_OUT, 0.3));
   const winVis = t >= T.WINDOW_IN && t < T.WINDOW_OUT + 0.3;
   win.style.display = winVis ? '' : 'none';
   if (winVis) {
@@ -210,10 +210,10 @@ window.render = function render(t) {
       const on = within(t, t0, t1); d.style.display = on ? '' : 'none'; if (!on) return;
       const b = box(state, name), a = toView(cam, b.x, b.y), z = toView(cam, b.x + b.w, b.y + b.h), g = 6;
       Object.assign(d.style, { left: `${a.x - g}px`, top: `${a.y - g}px`, width: `${z.x - a.x + 2 * g}px`, height: `${z.y - a.y + 2 * g}px` });
-      const pin = easeOut(ramp(t, t0, 0.2)), pout = ramp(t, t1 - 0.15, 0.15);
+      const pin = easeOut(ramp(t, t0, 0.3)), pout = ramp(t, t1 - 0.2, 0.2);
       d.style.opacity = pin * (1 - pout);
       rect.style.transform = `scale(${1.04 - 0.04 * pin})`;
-      const n = Math.round(label.length * ramp(t, t0 + 0.08, Math.max(0.25, label.length * 0.012)));
+      const n = Math.round(label.length * ramp(t, t0 + 0.12, Math.max(0.4, label.length * 0.022)));
       lab.textContent = label.slice(0, n) || '​';
       lab.style.visibility = n ? 'visible' : 'hidden';
       // Place the label outside the box, clamped to the viewport.

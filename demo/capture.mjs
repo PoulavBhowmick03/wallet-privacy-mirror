@@ -9,7 +9,7 @@ const SCALE = 3;
 await mkdir(OUT, { recursive: true });
 
 const browser = await chromium.launch({ channel: 'chrome' });
-const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: SCALE, colorScheme: 'light', reducedMotion: 'reduce' });
+const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: SCALE, colorScheme: 'dark', reducedMotion: 'reduce' });
 const page = await context.newPage();
 const states = {};
 
